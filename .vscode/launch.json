@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Target Web (Sem CORS)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--web-browser-flag=--disable-web-security"
+            ]
+        }
+    ]
+}
