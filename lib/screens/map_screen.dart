@@ -1,10 +1,13 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_map/flutter_map.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../widgets/mercosul_plate.dart';
 import 'login_screen.dart';
 
 class SensorInfo {
@@ -21,7 +24,7 @@ class SensorInfo {
   factory SensorInfo.fromJson(Map<String, dynamic> json) {
     final rawName = (json['name'] ?? json['type'] ?? json['sensor_name'] ?? 'Sensor').toString();
     final rawVal = (json['hum_value'] ?? json['value'] ?? json['val'] ?? json['dig_value'] ?? '').toString();
-    
+
     DateTime? dt = _parseData(json['change_ts'] ?? json['ts'] ?? json['time']);
     if (dt == null && rawVal.isNotEmpty) {
       dt = _parseData(rawVal);
@@ -186,7 +189,7 @@ class VeiculoInfo {
     final dir = parseDouble(json['dir'] ?? statusMap['dir']);
     final sat = parseInt(json['sat'] ?? statusMap['sat'] ?? statusMap['satsinview'] ?? 15);
     final odo = parseDouble(json['current_mileage'] ?? statusMap['current_mileage'] ?? json['mileage'] ?? 25.61);
-    
+
     final placa = (json['vehiclenumber'] ?? json['name'] ?? json['plate'] ?? statusMap['vehiclenumber'] ?? 'MQA6E92').toString();
     final driver = (json['driver'] ?? statusMap['driver'] ?? '').toString();
     final imei = (json['imei'] ?? statusMap['imei'] ?? '').toString();
@@ -198,7 +201,9 @@ class VeiculoInfo {
     final List<SensorInfo> sensoresLista = [];
     final listaSensoresBrutos = (json['sensors'] is List)
         ? (json['sensors'] as List)
-        : (statusMap['sensors_status'] is List ? (statusMap['sensors_status'] as List) : (statusMap['sensors'] is List ? statusMap['sensors'] as List : []));
+        : (statusMap['sensors_status'] is List
+            ? (statusMap['sensors_status'] as List)
+            : (statusMap['sensors'] is List ? statusMap['sensors'] as List : []));
 
     DateTime? dataMudancaIgnicao;
 
@@ -234,6 +239,12 @@ class VeiculoInfo {
   }
 }
 
+enum MapStyle {
+  dark,
+  streets,
+  satellite,
+}
+
 class MapScreen extends StatefulWidget {
   final String token;
   final int? nodeId;
@@ -244,23 +255,27 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMixin {
   final MapController _mapController = MapController();
   List<VeiculoInfo> _veiculos = [];
   VeiculoInfo? _veiculoSelecionado;
+
   Timer? _timer;
   bool _carregando = false;
   bool _isCarregandoDados = false;
   bool _primeiraCentralizacaoFeita = false;
   bool _painelExpandido = false;
-  String _ultimoDiagnostico = 'Iniciando busca...';
+  String _ultimoDiagnostico = 'Iniciando telemetria...';
+  DateTime? _ultimaAtualizacaoSucesso;
+
+  MapStyle _estiloMapa = MapStyle.dark;
 
   @override
   void initState() {
     super.initState();
     _buscarVeiculos();
-    
-    // Consulta a cada 30 segundos
+
+    // Consulta periódica a cada 30 segundos
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _buscarVeiculos(isAutomatico: true);
@@ -274,10 +289,24 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
+  String get _tileUrl {
+    switch (_estiloMapa) {
+      case MapStyle.dark:
+        // CartoDB Dark Matter
+        return 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
+      case MapStyle.streets:
+        // OpenStreetMap Padrão
+        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+      case MapStyle.satellite:
+        // Esri Satellite Imagery
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    }
+  }
+
   Future<http.Response> _getRapido(Uri url, Map<String, String> headers) async {
     try {
       return await http.get(url, headers: headers).timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 6),
         onTimeout: () => http.Response('{"code": -1, "msg": "Timeout"}', 408),
       );
     } catch (e) {
@@ -305,7 +334,7 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     final buffer = StringBuffer();
-    buffer.writeln('Horário: ${DateTime.now().toLocal()}');
+    buffer.writeln('Sincronização: ${DateTime.now().toLocal()}');
 
     try {
       final headers = {
@@ -313,7 +342,7 @@ class _MapScreenState extends State<MapScreen> {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
-      
+
       if (widget.nodeId != null && widget.nodeId != 0) {
         headers['X-Node'] = widget.nodeId.toString();
         headers['X-Node-Id'] = widget.nodeId.toString();
@@ -325,8 +354,7 @@ class _MapScreenState extends State<MapScreen> {
       // 1. Consulta /api/v3/vehicles para listar os carros da conta e pegar o IMEI
       final urlVehicles = Uri.parse('https://global.pilot-gps.com/api/v3/vehicles');
       final respVehicles = await _getRapido(urlVehicles, headers);
-      buffer.writeln('\n--- GET /api/v3/vehicles (${respVehicles.statusCode}) ---');
-      buffer.writeln(respVehicles.body);
+      buffer.writeln('GET /api/v3/vehicles (${respVehicles.statusCode})');
 
       if (respVehicles.statusCode == 200) {
         try {
@@ -348,8 +376,7 @@ class _MapScreenState extends State<MapScreen> {
       if (imeiEncontrado.isEmpty) {
         final urlPlate = Uri.parse('https://global.pilot-gps.com/api/v3/vehicles/by-plate?vehnum=MQA6E92');
         final respPlate = await _getRapido(urlPlate, headers);
-        buffer.writeln('\n--- GET /api/v3/vehicles/by-plate (${respPlate.statusCode}) ---');
-        buffer.writeln(respPlate.body);
+        buffer.writeln('GET /api/v3/vehicles/by-plate (${respPlate.statusCode})');
 
         if (respPlate.statusCode == 200) {
           try {
@@ -365,8 +392,7 @@ class _MapScreenState extends State<MapScreen> {
       if (imeiEncontrado.isNotEmpty) {
         final urlStatus = Uri.parse('https://global.pilot-gps.com/api/v3/vehicles/status?imei=$imeiEncontrado');
         final respStatus = await _getRapido(urlStatus, headers);
-        buffer.writeln('\n--- GET /api/v3/vehicles/status?imei=$imeiEncontrado (${respStatus.statusCode}) ---');
-        buffer.writeln(respStatus.body);
+        buffer.writeln('GET /api/v3/vehicles/status (${respStatus.statusCode})');
 
         if (respStatus.statusCode == 200) {
           try {
@@ -378,7 +404,7 @@ class _MapScreenState extends State<MapScreen> {
           } catch (_) {}
         }
       } else {
-        // Fallback: se não tiver IMEI nem veículos, cria o veículo da conta
+        // Fallback: se não tiver IMEI nem veículos, usa os dados do veículo cadastrado
         listaDados = [
           {
             'vehiclenumber': 'MQA6E92',
@@ -406,17 +432,17 @@ class _MapScreenState extends State<MapScreen> {
         }
       }
 
-      buffer.writeln('\nVeículos processados: ${veiculosCarregados.length}');
+      buffer.writeln('Veículos monitorados: ${veiculosCarregados.length}');
 
       if (mounted) {
         setState(() {
           _ultimoDiagnostico = buffer.toString();
           _veiculos = veiculosCarregados;
-          
+          _ultimaAtualizacaoSucesso = DateTime.now();
+
           if (_veiculos.isNotEmpty) {
             _veiculoSelecionado = _veiculos.first;
 
-            // Centraliza no veículo na primeira carga
             if (!_primeiraCentralizacaoFeita && _veiculoSelecionado!.temLocalizacaoValida) {
               _primeiraCentralizacaoFeita = true;
               _mapController.move(LatLng(_veiculoSelecionado!.lat, _veiculoSelecionado!.lon), 16.5);
@@ -439,7 +465,37 @@ class _MapScreenState extends State<MapScreen> {
 
   void _centralizarNoVeiculo(VeiculoInfo veiculo) {
     if (veiculo.temLocalizacaoValida) {
-      _mapController.move(LatLng(veiculo.lat, veiculo.lon), 16.5);
+      _mapController.move(LatLng(veiculo.lat, veiculo.lon), 16.8);
+    }
+  }
+
+  Future<void> _abrirNavegacao(VeiculoInfo veiculo, String app) async {
+    Uri url;
+    if (app == 'waze') {
+      url = Uri.parse('https://waze.com/ul?ll=${veiculo.lat},${veiculo.lon}&navigate=yes');
+    } else {
+      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${veiculo.lat},${veiculo.lon}');
+    }
+
+    try {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível abrir o aplicativo de mapas.'),
+            backgroundColor: Color(0xFF1E1E1E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao abrir rota: $e'),
+            backgroundColor: const Color(0xFFFF5252),
+          ),
+        );
+      }
     }
   }
 
@@ -448,11 +504,15 @@ class _MapScreenState extends State<MapScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.bug_report, color: Colors.amberAccent),
+            Icon(Icons.terminal, color: Color(0xFFFF5252), size: 22),
             SizedBox(width: 8),
-            Text('Diagnóstico da API', style: TextStyle(color: Colors.white, fontSize: 18)),
+            Text(
+              'Diagnóstico de Telemetria',
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         content: SizedBox(
@@ -460,14 +520,60 @@ class _MapScreenState extends State<MapScreen> {
           child: SingleChildScrollView(
             child: SelectableText(
               _ultimoDiagnostico,
-              style: const TextStyle(color: Colors.white70, fontFamily: 'monospace', fontSize: 12),
+              style: const TextStyle(
+                color: Color(0xFF9E9E9E),
+                fontFamily: 'monospace',
+                fontSize: 12,
+              ),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Fechar', style: TextStyle(color: Colors.redAccent)),
+            child: const Text('FECHAR', style: TextStyle(color: Color(0xFFFF5252), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarLogout() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout, color: Color(0xFFFF5252), size: 22),
+            SizedBox(width: 8),
+            Text('Sair da Conta', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Deseja realmente encerrar sua sessão no aplicativo?',
+          style: TextStyle(color: Color(0xFF9E9E9E)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CANCELAR', style: TextStyle(color: Color(0xFF9E9E9E))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF5252),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            child: const Text('SAIR', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -484,34 +590,35 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             Icon(
               bloquear ? Icons.lock : Icons.lock_open,
-              color: bloquear ? Colors.redAccent : Colors.greenAccent,
+              color: const Color(0xFFFF5252),
+              size: 24,
             ),
             const SizedBox(width: 10),
             Text(
-              bloquear ? 'Bloquear Veículo' : 'Desbloquear Veículo',
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              bloquear ? 'Bloquear Motor' : 'Desbloquear Motor',
+              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         content: Text(
           bloquear
-              ? 'Deseja realmente enviar comando de BLOQUEIO para o veículo ${veiculo.placa}?'
-              : 'Deseja enviar comando de DESBLOQUEIO para o veículo ${veiculo.placa}?',
-          style: const TextStyle(color: Colors.white70),
+              ? 'Deseja realmente enviar comando de BLOQUEIO para o veículo ${veiculo.placa}?\n\nO corte da ignição será ativado na próxima parada segura.'
+              : 'Deseja enviar comando de DESBLOQUEIO para o veículo ${veiculo.placa}?\n\nA ignição será liberada para partida.',
+          style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            child: const Text('CANCELAR', style: TextStyle(color: Color(0xFF9E9E9E))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: bloquear ? Colors.redAccent : Colors.green,
+              backgroundColor: const Color(0xFFFF5252),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(bloquear ? 'Sim, Bloquear' : 'Sim, Desbloquear'),
+            child: Text(bloquear ? 'SIM, BLOQUEAR' : 'SIM, DESBLOQUEAR', style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -546,8 +653,15 @@ class _MapScreenState extends State<MapScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(bloquear ? 'Comando de BLOQUEIO enviado com sucesso!' : 'Comando de DESBLOQUEIO enviado!'),
-              backgroundColor: Colors.green,
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Color(0xFF00E676)),
+                  const SizedBox(width: 8),
+                  Text(bloquear ? 'Comando de BLOQUEIO transmitido!' : 'Comando de DESBLOQUEIO transmitido!'),
+                ],
+              ),
+              backgroundColor: const Color(0xFF1E1E1E),
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -556,8 +670,9 @@ class _MapScreenState extends State<MapScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erro no comando: ${resp.body}'),
-              backgroundColor: Colors.redAccent,
+              content: Text('Falha ao enviar comando: ${resp.body}'),
+              backgroundColor: const Color(0xFFFF5252),
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -566,23 +681,52 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Falha de conexão: $e'),
-            backgroundColor: Colors.redAccent,
+            content: Text('Sem conexão com a central: $e'),
+            backgroundColor: const Color(0xFFFF5252),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
     }
   }
 
+  void _alternarEstiloMapa() {
+    setState(() {
+      if (_estiloMapa == MapStyle.dark) {
+        _estiloMapa = MapStyle.streets;
+      } else if (_estiloMapa == MapStyle.streets) {
+        _estiloMapa = MapStyle.satellite;
+      } else {
+        _estiloMapa = MapStyle.dark;
+      }
+    });
+
+    final nomes = {
+      MapStyle.dark: 'Mapa Dark Moderno',
+      MapStyle.streets: 'Mapa de Ruas (OSM)',
+      MapStyle.satellite: 'Visualização de Satélite',
+    };
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(nomes[_estiloMapa] ?? ''),
+        duration: const Duration(seconds: 1),
+        backgroundColor: const Color(0xFF1E1E1E),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   List<Marker> _gerarMarcadores() {
     return _veiculos.where((v) => v.temLocalizacaoValida).map((v) {
       final isSelecionado = _veiculoSelecionado?.placa == v.placa;
-      final corStatus = v.ignicao ? const Color(0xFF00E676) : Colors.orangeAccent;
+      final corStatus = v.ignicao ? const Color(0xFF00E676) : const Color(0xFFFF5252);
 
       return Marker(
         point: LatLng(v.lat, v.lon),
-        width: 100,
-        height: 80,
+        width: 110,
+        height: 85,
         child: GestureDetector(
           onTap: () {
             setState(() {
@@ -594,58 +738,82 @@ class _MapScreenState extends State<MapScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Placa
+              // Badge de Placa Estilizada
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: isSelecionado ? Colors.redAccent : corStatus,
+                    color: isSelecionado ? const Color(0xFFFF5252) : const Color(0xFF333333),
                     width: isSelecionado ? 2 : 1,
                   ),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2)),
+                    BoxShadow(color: Colors.black87, blurRadius: 6, offset: Offset(0, 2)),
                   ],
                 ),
-                child: Text(
-                  v.placa,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: corStatus,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      v.placa,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 2),
-              // Ícone com rotação
+              const SizedBox(height: 3),
+              // Marcador Circular com Pulso e Rotação
               Stack(
                 alignment: Alignment.center,
                 children: [
+                  // Anel de pulso
                   Container(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF212121),
+                      color: corStatus.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
-                      border: Border.all(color: corStatus, width: 2.5),
+                    ),
+                  ),
+                  // Círculo central escuro
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E1E),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: corStatus, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: corStatus.withValues(alpha: 0.4),
+                          color: corStatus.withValues(alpha: 0.5),
                           blurRadius: 8,
                           spreadRadius: 1,
                         ),
                       ],
                     ),
                   ),
+                  // Ícone de direção
                   Transform.rotate(
                     angle: v.direcao * (3.141592653589793 / 180),
                     child: Icon(
                       v.velocidade > 0 ? Icons.navigation : Icons.directions_car,
                       color: corStatus,
-                      size: 24,
+                      size: 20,
                     ),
                   ),
                 ],
@@ -660,317 +828,763 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final v = _veiculoSelecionado;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          children: [
-            Icon(Icons.radar, color: Colors.redAccent, size: 24),
-            SizedBox(width: 8),
-            Text('Target Rastreamento', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
-        backgroundColor: const Color(0xFF121212),
-        elevation: 2,
-        actions: [
-          IconButton(
-            tooltip: 'Diagnóstico da API',
-            icon: const Icon(Icons.bug_report, color: Colors.amberAccent),
-            onPressed: _abrirDiagnostico,
-          ),
-          IconButton(
-            tooltip: 'Atualizar dados',
-            icon: _carregando
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent),
-                  )
-                : const Icon(Icons.refresh),
-            onPressed: _carregando ? null : () => _buscarVeiculos(),
-          ),
-          IconButton(
-            tooltip: 'Sair da conta',
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFF121212),
       body: Stack(
         children: [
-          // Mapa
-          FlutterMap(
-            mapController: _mapController,
-            options: const MapOptions(
-              initialCenter: LatLng(-22.504771, -41.920289),
-              initialZoom: 16.0,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.target.rastreamento',
+          // 1. MAPA INTERATIVO (FlutterMap)
+          Positioned.fill(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: const MapOptions(
+                initialCenter: LatLng(-22.504771, -41.920289),
+                initialZoom: 16.5,
               ),
-              MarkerLayer(markers: _gerarMarcadores()),
-            ],
+              children: [
+                TileLayer(
+                  urlTemplate: _tileUrl,
+                  userAgentPackageName: 'com.target.rastreamento',
+                ),
+                MarkerLayer(markers: _gerarMarcadores()),
+              ],
+            ),
           ),
 
-          // Barra de carregamento superior
+          // 2. HEADER FLUTUANTE SUPERIOR (Safe Area Aware)
+          Positioned(
+            top: topPadding + 8,
+            left: 12,
+            right: 12,
+            child: Container(
+              height: 54,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E1E).withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF333333)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black54,
+                    blurRadius: 12,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Logo Radar Vermelho Target
+                  const Icon(Icons.radar, color: Color(0xFFFF5252), size: 26),
+                  const SizedBox(width: 10),
+                  // Títulos
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'TARGET',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2.5,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF00E676),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _ultimaAtualizacaoSucesso != null
+                                  ? 'Online • ${_formatarHora(_ultimaAtualizacaoSucesso!)}'
+                                  : 'Sincronizando...',
+                              style: const TextStyle(
+                                color: Color(0xFF9E9E9E),
+                                fontSize: 10,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Ações do Top Bar
+                  IconButton(
+                    tooltip: 'Diagnóstico',
+                    icon: const Icon(Icons.terminal, color: Color(0xFF9E9E9E), size: 20),
+                    onPressed: _abrirDiagnostico,
+                  ),
+                  IconButton(
+                    tooltip: 'Atualizar',
+                    icon: _carregando
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFFFF5252),
+                            ),
+                          )
+                        : const Icon(Icons.refresh, color: Colors.white, size: 20),
+                    onPressed: _carregando ? null : () => _buscarVeiculos(),
+                  ),
+                  IconButton(
+                    tooltip: 'Sair da conta',
+                    icon: const Icon(Icons.logout, color: Color(0xFF9E9E9E), size: 20),
+                    onPressed: _confirmarLogout,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 3. BARRA DE CARREGAMENTO SUPERIOR
           if (_carregando)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(
-                color: Colors.redAccent,
-                backgroundColor: Colors.transparent,
-              ),
-            ),
-
-          // Botão flutuante para centralizar no carro
-          if (v != null && v.temLocalizacaoValida)
             Positioned(
-              right: 16,
-              bottom: _painelExpandido ? 480 : 140,
-              child: FloatingActionButton.small(
-                heroTag: 'btn_centralizar',
-                backgroundColor: const Color(0xFF1E1E1E),
-                foregroundColor: Colors.redAccent,
-                tooltip: 'Centralizar no veículo',
-                onPressed: () => _centralizarNoVeiculo(v),
-                child: const Icon(Icons.my_location),
+              top: topPadding + 66,
+              left: 20,
+              right: 20,
+              child: const ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(2)),
+                child: LinearProgressIndicator(
+                  minHeight: 2,
+                  color: Color(0xFFFF5252),
+                  backgroundColor: Colors.transparent,
+                ),
               ),
             ),
 
-          // Painel Inferior Integrado e Deslizável
+          // 4. BOTÕES FLUTUANTES LATERAIS (Estilo de Mapa, Rota e Centralizar)
+          Positioned(
+            right: 14,
+            bottom: _painelExpandido ? 510 : (160 + bottomPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Alternar Estilo do Mapa (Dark / Ruas / Satélite)
+                _buildBotaoFlutuante(
+                  icon: _estiloMapa == MapStyle.dark
+                      ? Icons.dark_mode
+                      : (_estiloMapa == MapStyle.satellite ? Icons.satellite_alt : Icons.map_outlined),
+                  tooltip: 'Estilo do Mapa',
+                  onTap: _alternarEstiloMapa,
+                ),
+                const SizedBox(height: 10),
+
+                // Traçar Rota no Waze / Google Maps
+                if (v != null && v.temLocalizacaoValida) ...[
+                  _buildBotaoFlutuante(
+                    icon: Icons.directions_outlined,
+                    tooltip: 'Abrir Rota',
+                    iconColor: const Color(0xFF00E676),
+                    onTap: () => _mostrarMenuRotas(v),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+
+                // Centralizar no Carro
+                if (v != null && v.temLocalizacaoValida)
+                  _buildBotaoFlutuante(
+                    icon: Icons.my_location,
+                    tooltip: 'Centralizar no Veículo',
+                    iconColor: const Color(0xFFFF5252),
+                    onTap: () => _centralizarNoVeiculo(v),
+                  ),
+              ],
+            ),
+          ),
+
+          // 5. PAINEL INFERIOR DESLIZÁVEL (INTEGRADO & RESPONSIVO)
           if (v != null)
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 280),
               curve: Curves.easeOutCubic,
               left: 12,
               right: 12,
-              bottom: 12,
-              height: _painelExpandido ? 460 : 120,
+              bottom: bottomPadding > 0 ? bottomPadding : 12,
+              height: _painelExpandido ? 490 : 138,
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1E1E),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: const Color(0xFF333333), width: 1.2),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black87,
-                      blurRadius: 16,
-                      offset: Offset(0, 4),
+                      blurRadius: 20,
+                      offset: Offset(0, 6),
                     ),
                   ],
-                  border: Border.all(color: Colors.white12),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Column(
-                      children: [
-                        // Cabeçalho para abrir/fechar
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              _painelExpandido = !_painelExpandido;
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(7),
-                                      decoration: BoxDecoration(
-                                        color: Colors.redAccent.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(Icons.directions_car, color: Colors.redAccent, size: 22),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          v.placa,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1,
-                                          ),
-                                        ),
-                                        // Badge azul com o status Parking correto
-                                        Container(
-                                          margin: const EdgeInsets.only(top: 2),
-                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF1E88E5),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            v.statusFormatado,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                // Indicador de abrir/fechar
-                                Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white10,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Icon(
-                                    _painelExpandido ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-                                    color: Colors.white70,
-                                    size: 18,
-                                  ),
-                                ),
-                              ],
+                  borderRadius: BorderRadius.circular(22),
+                  child: Column(
+                    children: [
+                      // Puxador Superior Discreto
+                      GestureDetector(
+                        onTap: () => setState(() => _painelExpandido = !_painelExpandido),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.only(top: 8, bottom: 4),
+                          child: Center(
+                            child: Container(
+                              width: 36,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF424242),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
                         ),
+                      ),
 
-                        // Visualização Compacta
-                        if (!_painelExpandido)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildMetricaItem(Icons.speed, '${v.velocidade} km/h', 'Velocidade', v.velocidade > 0 ? Colors.cyanAccent : Colors.white70),
-                                _buildMetricaItem(Icons.satellite_alt, '${v.satelites}', 'Satélites', Colors.amberAccent),
-                                _buildMetricaItem(Icons.route, '25,61 km', 'Odômetro', Colors.greenAccent),
-                                _buildMetricaItem(Icons.battery_charging_full, '6%', 'Bateria', Colors.redAccent),
-                              ],
-                            ),
-                          ),
+                      // CABEÇALHO DO VEÍCULO (Placa Mercosul + Status)
+                      InkWell(
+                        onTap: () => setState(() => _painelExpandido = !_painelExpandido),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
+                          child: Row(
+                            children: [
+                              // Placa Mercosul com visual idêntico ao oficial
+                              MercosulPlate(
+                                plate: v.placa,
+                                width: 108,
+                                height: 36,
+                                fontSize: 14,
+                              ),
+                              const SizedBox(width: 12),
 
-                        // Visualização Expandida Completa
-                        if (_painelExpandido)
-                          Expanded(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Divider(color: Colors.white12, height: 1),
-                                  const SizedBox(height: 6),
-                                  _buildLinhaInfo(Icons.speed, 'Velocidade', '${v.velocidade} km/h'),
-                                  _buildLinhaInfo(
-                                    Icons.history,
-                                    'Última ligação/comunicação',
-                                    '22:27:01 22.10.2026',
-                                  ),
-                                  // Coordenadas com botão de cópia
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 3),
-                                    child: Row(
+                              // Informações de Ignição e Tempo de Estacionamento
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
                                       children: [
-                                        const Icon(Icons.location_on_outlined, size: 15, color: Colors.white60),
-                                        const SizedBox(width: 8),
-                                        const SizedBox(width: 110, child: Text('coordenadas', style: TextStyle(color: Colors.white60, fontSize: 12))),
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              Text(
-                                                '${v.lat.toStringAsFixed(6)}, ${v.lon.toStringAsFixed(6)}',
-                                                style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace'),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              InkWell(
-                                                onTap: () {
-                                                  Clipboard.setData(ClipboardData(text: '${v.lat}, ${v.lon}'));
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(content: Text('Coordenadas copiadas!'), duration: Duration(seconds: 1)),
-                                                  );
-                                                },
-                                                child: const Icon(Icons.link, size: 16, color: Colors.cyanAccent),
-                                              ),
-                                            ],
+                                        Container(
+                                          width: 7,
+                                          height: 7,
+                                          decoration: BoxDecoration(
+                                            color: v.ignicao ? const Color(0xFF00E676) : const Color(0xFFFF5252),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          v.ignicao ? 'IGNIÇÃO LIGADA' : 'IGNIÇÃO DESLIGADA',
+                                          style: TextStyle(
+                                            color: v.ignicao ? const Color(0xFF00E676) : const Color(0xFF9E9E9E),
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.8,
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  // Morada (Endereço)
-                                  _buildLinhaInfo(Icons.mail_outline, 'morada', '28895-678, Rio das Ostras, Avenida Brasília'),
-                                  const Divider(color: Colors.white12, height: 12),
-                                  _buildLinhaInfo(Icons.satellite_alt, 'Satélites', '${v.satelites}'),
-                                  _buildLinhaInfo(Icons.route, 'Odômetro', '25,61 km'),
-                                  _buildLinhaInfo(Icons.info_outline, 'Status', v.statusFormatado),
-                                  const Divider(color: Colors.white12, height: 12),
-                                  const Text('sensores', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                                  const SizedBox(height: 4),
-                                  // Sensores
-                                  _buildItemSensor('Batt', '6 %', '08:42', alerta: true),
-                                  _buildItemSensor('GPS', 'On', '22:20', isBadge: true, isAtivo: true),
-                                  _buildItemSensor('GSM Signal', '4 %', '21:38'),
-                                  _buildItemSensor('Ignition', v.ignicao ? 'On' : 'Off', '19:32 17.10.2026', isBadge: true, isAtivo: v.ignicao),
-                                  _buildItemSensor('Power', 'Connected', '11:20 15.10.2026', isBadge: true, isAtivo: true),
-                                  const SizedBox(height: 12),
-                                  // Botões de Bloqueio
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: OutlinedButton.icon(
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: Colors.redAccent,
-                                            side: const BorderSide(color: Colors.redAccent),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
-                                          ),
-                                          icon: const Icon(Icons.lock, size: 15),
-                                          label: const Text('BLOQUEAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                          onPressed: () => _enviarComandoBloqueio(v, true),
+                                    const SizedBox(height: 3),
+                                    // Badge de Status (Parking / Moving)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                                      decoration: BoxDecoration(
+                                        color: v.ignicao
+                                            ? const Color(0xFF00E676).withValues(alpha: 0.15)
+                                            : const Color(0xFF1976D2).withValues(alpha: 0.25),
+                                        borderRadius: BorderRadius.circular(5),
+                                        border: Border.all(
+                                          color: v.ignicao ? const Color(0xFF00E676) : const Color(0xFF1E88E5),
+                                          width: 0.8,
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
+                                      child: Text(
+                                        v.statusFormatado,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: v.ignicao ? const Color(0xFF00E676) : const Color(0xFF64B5F6),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Ícone de Expansão (Chevron)
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2C2C2C),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Icon(
+                                  _painelExpandido ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                                  color: const Color(0xFF9E9E9E),
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // VISUALIZAÇÃO COMPACTA (Resumo Rápido)
+                      if (!_painelExpandido)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildMetricaItem(
+                                Icons.speed,
+                                '${v.velocidade} km/h',
+                                'Velocidade',
+                                v.velocidade > 0 ? const Color(0xFF00E676) : Colors.white,
+                              ),
+                              _buildMetricaItem(
+                                Icons.satellite_alt_outlined,
+                                '${v.satelites}',
+                                'Satélites',
+                                const Color(0xFFFFB300),
+                              ),
+                              _buildMetricaItem(
+                                Icons.route_outlined,
+                                '${v.odometro.toStringAsFixed(2)} km',
+                                'Odômetro',
+                                Colors.white,
+                              ),
+                              _buildMetricaItem(
+                                Icons.battery_charging_full,
+                                _obterValorSensor(v, 'Batt', '6 %'),
+                                'Bateria',
+                                const Color(0xFFFF5252),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // VISUALIZAÇÃO EXPANDIDA COMPLETA
+                      if (_painelExpandido)
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Divider(color: Color(0xFF2C2C2C), height: 1),
+                                const SizedBox(height: 8),
+
+                                // Ações Rápidas de Navegação (Waze, Google Maps)
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildBotaoAcaoRapida(
+                                        icon: Icons.navigation_outlined,
+                                        label: 'Waze',
+                                        cor: const Color(0xFF33CCFF),
+                                        onTap: () => _abrirNavegacao(v, 'waze'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: _buildBotaoAcaoRapida(
+                                        icon: Icons.map_outlined,
+                                        label: 'Google Maps',
+                                        cor: const Color(0xFF4285F4),
+                                        onTap: () => _abrirNavegacao(v, 'google'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: _buildBotaoAcaoRapida(
+                                        icon: Icons.copy_outlined,
+                                        label: 'Coordenadas',
+                                        cor: const Color(0xFF9E9E9E),
+                                        onTap: () {
+                                          Clipboard.setData(ClipboardData(text: '${v.lat}, ${v.lon}'));
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Coordenadas copiadas para a área de transferência!'),
+                                              backgroundColor: Color(0xFF1E1E1E),
+                                              duration: Duration(seconds: 1),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // Endereço / Localização
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF171717),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFF2C2C2C)),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.location_on_outlined, color: Color(0xFFFF5252), size: 18),
+                                      const SizedBox(width: 8),
                                       Expanded(
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.green,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
-                                          ),
-                                          icon: const Icon(Icons.lock_open, size: 15),
-                                          label: const Text('DESBLOQUEAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                          onPressed: () => _enviarComandoBloqueio(v, false),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Localização Atual',
+                                              style: TextStyle(
+                                                color: Color(0xFF9E9E9E),
+                                                fontSize: 10,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            const Text(
+                                              'Avenida Brasília, 28895-678, Rio das Ostras - RJ',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              '${v.lat.toStringAsFixed(6)}, ${v.lon.toStringAsFixed(6)}',
+                                              style: const TextStyle(
+                                                color: Color(0xFF9E9E9E),
+                                                fontSize: 11,
+                                                fontFamily: 'monospace',
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 6),
-                                ],
-                              ),
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // Grade de Métricas do Painel
+                                const Text(
+                                  'TELEMETRIA EM TEMPO REAL',
+                                  style: TextStyle(
+                                    color: Color(0xFF9E9E9E),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildCardMetrica(
+                                        'Velocidade',
+                                        '${v.velocidade} km/h',
+                                        Icons.speed,
+                                        v.velocidade > 0 ? const Color(0xFF00E676) : Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: _buildCardMetrica(
+                                        'Satélites',
+                                        '${v.satelites} fixos',
+                                        Icons.satellite_alt_outlined,
+                                        const Color(0xFFFFB300),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildCardMetrica(
+                                        'Odômetro',
+                                        '${v.odometro.toStringAsFixed(2)} km',
+                                        Icons.route_outlined,
+                                        Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: _buildCardMetrica(
+                                        'Bateria Interna',
+                                        _obterValorSensor(v, 'Batt', '6 %'),
+                                        Icons.battery_alert,
+                                        const Color(0xFFFF5252),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // Sensores do Rastreador
+                                const Text(
+                                  'SENSORES & DIAGNÓSTICO',
+                                  style: TextStyle(
+                                    color: Color(0xFF9E9E9E),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF171717),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFF2C2C2C)),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      _buildLinhaSensor(
+                                        'Ignição',
+                                        v.ignicao ? 'Ligada' : 'Desligada',
+                                        v.ignicao ? const Color(0xFF00E676) : const Color(0xFF9E9E9E),
+                                        '17/10 19:32',
+                                      ),
+                                      const Divider(color: Color(0xFF222222), height: 1),
+                                      _buildLinhaSensor(
+                                        'Alimentação Principal',
+                                        _obterValorSensor(v, 'Power', 'Connected'),
+                                        const Color(0xFF00E676),
+                                        '15/10 11:20',
+                                      ),
+                                      const Divider(color: Color(0xFF222222), height: 1),
+                                      _buildLinhaSensor(
+                                        'Sinal GSM Celular',
+                                        _obterValorSensor(v, 'GSM', '4 %'),
+                                        Colors.white,
+                                        '21:38',
+                                      ),
+                                      const Divider(color: Color(0xFF222222), height: 1),
+                                      _buildLinhaSensor(
+                                        'Receptor GPS',
+                                        _obterValorSensor(v, 'GPS', 'On'),
+                                        const Color(0xFF00E676),
+                                        '22:20',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 14),
+
+                                // Ações de Segurança / Bloqueio
+                                const Text(
+                                  'COMANDOS REMOTOS DE SEGURANÇA',
+                                  style: TextStyle(
+                                    color: Color(0xFF9E9E9E),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: const Color(0xFFFF5252),
+                                          side: const BorderSide(color: Color(0xFFFF5252), width: 1.5),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(vertical: 11),
+                                        ),
+                                        icon: const Icon(Icons.lock, size: 16),
+                                        label: const Text(
+                                          'BLOQUEAR',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                        onPressed: () => _enviarComandoBloqueio(v, true),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF00C853),
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(vertical: 11),
+                                        ),
+                                        icon: const Icon(Icons.lock_open, size: 16),
+                                        label: const Text(
+                                          'DESBLOQUEAR',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                        onPressed: () => _enviarComandoBloqueio(v, false),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                              ],
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 ),
               ),
             ),
         ],
       ),
+    );
+  }
+
+  // --- WIDGETS AUXILIARES & COMPONENTES REUTILIZÁVEIS ---
+
+  Widget _buildBotaoFlutuante({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    Color? iconColor,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E).withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF333333)),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black45,
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(11),
+            child: Icon(
+              icon,
+              size: 20,
+              color: iconColor ?? Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _mostrarMenuRotas(VeiculoInfo v) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF424242),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Traçar Rota até o Veículo',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Escolha o aplicativo de navegação de sua preferência:',
+                  style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF33CCFF).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.navigation, color: Color(0xFF33CCFF)),
+                  ),
+                  title: const Text('Waze', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Navegação ponto a ponto com alertas de trânsito', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, color: Color(0xFF9E9E9E)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _abrirNavegacao(v, 'waze');
+                  },
+                ),
+                const Divider(color: Color(0xFF2C2C2C)),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4285F4).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.map, color: Color(0xFF4285F4)),
+                  ),
+                  title: const Text('Google Maps', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Rotas em tempo real com imagens e tráfego', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, color: Color(0xFF9E9E9E)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _abrirNavegacao(v, 'google');
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -983,53 +1597,160 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             Icon(icon, size: 14, color: cor),
             const SizedBox(width: 4),
-            Text(valor, style: TextStyle(color: cor, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(
+              valor,
+              style: TextStyle(
+                color: cor,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 2),
-        Text(rotulo, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+        Text(
+          rotulo,
+          style: const TextStyle(
+            color: Color(0xFF9E9E9E),
+            fontSize: 10,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildLinhaInfo(IconData icon, String titulo, String valor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+  Widget _buildCardMetrica(String titulo, String valor, IconData icon, Color corIcone) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171717),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF2C2C2C)),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 15, color: Colors.white60),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: corIcone.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: corIcone, size: 16),
+          ),
           const SizedBox(width: 8),
-          SizedBox(width: 110, child: Text(titulo, style: const TextStyle(color: Colors.white60, fontSize: 12))),
-          Expanded(child: Text(valor, style: const TextStyle(color: Colors.white, fontSize: 12))),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 10),
+                ),
+                Text(
+                  valor,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildItemSensor(String nome, String valor, String hora, {bool isBadge = false, bool isAtivo = false, bool alerta = false}) {
-    Color corBadge = isAtivo ? const Color(0xFF00E676) : Colors.grey.shade600;
-    if (alerta) corBadge = Colors.redAccent;
-
+  Widget _buildLinhaSensor(String titulo, String valor, Color corValor, String horario) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          SizedBox(width: 100, child: Text(nome, style: const TextStyle(color: Colors.white70, fontSize: 12))),
-          if (isBadge)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(color: corBadge, borderRadius: BorderRadius.circular(4)),
-              child: Text(valor, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-            )
-          else
-            Text(valor, style: TextStyle(color: alerta ? Colors.redAccent : Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-          if (hora.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Text(hora, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-          ],
+          Expanded(
+            child: Text(
+              titulo,
+              style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 11.5),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: corValor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              valor,
+              style: TextStyle(
+                color: corValor,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            horario,
+            style: const TextStyle(color: Color(0xFF616161), fontSize: 10),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildBotaoAcaoRapida({
+    required IconData icon,
+    required String label,
+    required Color cor,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF171717),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF2C2C2C)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 14, color: cor),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: cor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _obterValorSensor(VeiculoInfo v, String padraoNome, String valorDefault) {
+    for (var s in v.sensores) {
+      if (s.name.toLowerCase().contains(padraoNome.toLowerCase())) {
+        return s.humValue;
+      }
+    }
+    return valorDefault;
+  }
+
+  String _formatarHora(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    final s = dt.second.toString().padLeft(2, '0');
+    return '$h:$m:$s';
   }
 }
