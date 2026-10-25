@@ -411,14 +411,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Botão discreto de configurações do servidor no canto superior direito
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                      tooltip: 'Parâmetros do Servidor',
-                      icon: const Icon(Icons.tune, color: Color(0xFF616161), size: 20),
-                      onPressed: _abrirConfiguracoesServidor,
-                    ),
+                  // Barra superior com botão voltar ao site e parâmetros do servidor
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (Navigator.canPop(context))
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF9E9E9E),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          ),
+                          icon: const Icon(Icons.arrow_back, size: 18),
+                          label: const Text('Voltar ao site', style: TextStyle(fontSize: 12)),
+                          onPressed: () => Navigator.pop(context),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      IconButton(
+                        tooltip: 'Parâmetros do Servidor',
+                        icon: const Icon(Icons.tune, color: Color(0xFF616161), size: 20),
+                        onPressed: _abrirConfiguracoesServidor,
+                      ),
+                    ],
                   ),
 
                   // Logo oficial Target

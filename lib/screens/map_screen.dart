@@ -8,7 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/mercosul_plate.dart';
-import 'login_screen.dart';
+import 'landing_page_screen.dart';
 
 class SensorInfo {
   final String name;
@@ -568,9 +568,10 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             ),
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.pushReplacement(
+              Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                MaterialPageRoute(builder: (context) => const LandingPageScreen()),
+                (route) => false,
               );
             },
             child: const Text('SAIR', style: TextStyle(fontWeight: FontWeight.bold)),
