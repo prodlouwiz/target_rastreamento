@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/mercosul_plate.dart';
@@ -19,6 +21,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _planosKey = GlobalKey();
   final GlobalKey _recursosKey = GlobalKey();
+  final GlobalKey _cercasKey = GlobalKey();
+  final GlobalKey _relatoriosKey = GlobalKey();
   final GlobalKey _simuladorKey = GlobalKey();
   final GlobalKey _faqKey = GlobalKey();
 
@@ -29,51 +33,57 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   late AnimationController _radarController;
 
   // --- ESTADO DO SIMULADOR INTERATIVO DO APP ---
-  String _veiculoSelecionado = 'carro'; // 'carro', 'moto', 'lancha'
+  String _veiculoSelecionado = 'carro'; // 'carro', 'moto', 'frota'
+  String _abaSimulador = 'mapa'; // 'mapa', 'cerca', 'relatorios'
   bool _ignicaoLigada = true;
   bool _motorBloqueado = false;
   bool _emMovimento = false;
   double _velocidade = 0;
   double _odometro = 25.61;
   bool _mostrarAlertaWhatsapp = false;
+  String _tipoAlertaWhatsapp = 'ignicao'; // 'ignicao' ou 'cerca'
   Timer? _timerMovimento;
 
-  // --- PROVA SOCIAL DINÂMICA (TOASTS AO VIVO) ---
+  // Coordenadas reais de Rio das Ostras e Macaé - RJ
+  static const LatLng _coordRioDasOstras = LatLng(-22.504771, -41.920289);
+  static const LatLng _coordMacae = LatLng(-22.3768, -41.7869);
+
+  // --- PROVA SOCIAL DINÂMICA (TOASTS PROFISSIONAIS AO VIVO) ---
   final List<Map<String, String>> _notificacoesSociais = [
     {
       'icone': '🚗',
       'cidade': 'Rio das Ostras - RJ',
       'veiculo': 'Toyota Corolla 2024',
       'acao': 'Rastreador 4G ativado',
-      'tempo': 'há 3 minutos',
+      'tempo': 'há 4 minutos',
+    },
+    {
+      'icone': '🛡️',
+      'cidade': 'Macaé - RJ',
+      'veiculo': 'Honda Civic',
+      'acao': 'Cerca virtual perimetral configurada',
+      'tempo': 'há 11 minutos',
+    },
+    {
+      'icone': '📊',
+      'cidade': 'Rio das Ostras - RJ',
+      'veiculo': 'Frota 04 Veículos',
+      'acao': 'Relatório diário de rotas gerado',
+      'tempo': 'há 21 minutos',
     },
     {
       'icone': '🏍️',
       'cidade': 'Macaé - RJ',
       'veiculo': 'Honda CB 650R',
       'acao': 'Bloqueio remoto testado com sucesso',
-      'tempo': 'há 9 minutos',
-    },
-    {
-      'icone': '🚤',
-      'cidade': 'Búzios - RJ',
-      'veiculo': 'Lancha Real 32',
-      'acao': 'Embarcação conectada via satélite',
-      'tempo': 'há 18 minutos',
-    },
-    {
-      'icone': '🚙',
-      'cidade': 'Cabo Frio - RJ',
-      'veiculo': 'Jeep Compass',
-      'acao': 'Cerca virtual ativada',
-      'tempo': 'há 24 minutos',
+      'tempo': 'há 32 minutos',
     },
     {
       'icone': '🚚',
       'cidade': 'Campos dos Goytacazes - RJ',
       'veiculo': 'Caminhão Mercedes Accelo',
-      'acao': 'Frota corporativa conectada',
-      'tempo': 'há 32 minutos',
+      'acao': 'Telemetria de horímetro conectada',
+      'tempo': 'há 45 minutos',
     },
   ];
 
@@ -88,24 +98,21 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   void initState() {
     super.initState();
 
-    // Inicia radar rotativo contínuo
     _radarController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
     )..repeat();
 
-    // Inicia ciclo de prova social dinâmica (toasts)
     _iniciarCicloProvaSocial();
   }
 
   void _iniciarCicloProvaSocial() {
-    _timerToast = Timer.periodic(const Duration(seconds: 12), (timer) {
+    _timerToast = Timer.periodic(const Duration(seconds: 14), (timer) {
       if (!mounted) return;
       setState(() {
         _toastVisivel = true;
       });
 
-      // Esconde após 5 segundos
       Future.delayed(const Duration(seconds: 5), () {
         if (mounted) {
           setState(() {
@@ -137,12 +144,13 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       } else {
         if (_motorBloqueado) {
           _mostrarMensagem(
-              'Não é possível acelerar com o motor bloqueado! Desbloqueie primeiro.',
+              'Motor bloqueado! Desbloqueie para simular a aceleração.',
               isAlerta: true);
           return;
         }
         _emMovimento = true;
         _ignicaoLigada = true;
+        _abaSimulador = 'mapa';
         _timerMovimento?.cancel();
         _timerMovimento =
             Timer.periodic(const Duration(milliseconds: 100), (t) {
@@ -151,7 +159,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
             return;
           }
           setState(() {
-            if (_velocidade < 64) {
+            if (_velocidade < 62) {
               _velocidade += 2;
             }
             _odometro += 0.02;
@@ -169,14 +177,17 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         _emMovimento = false;
         _velocidade = 0;
         _timerMovimento?.cancel();
+        _tipoAlertaWhatsapp = 'bloqueio';
         _mostrarAlertaWhatsapp = true;
       }
     });
   }
 
-  void _simularAlertaWhatsapp() {
+  void _simularViolacaoCerca() {
     setState(() {
-      _mostrarAlertaWhatsapp = !_mostrarAlertaWhatsapp;
+      _abaSimulador = 'cerca';
+      _tipoAlertaWhatsapp = 'cerca';
+      _mostrarAlertaWhatsapp = true;
     });
   }
 
@@ -238,7 +249,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFF0C0F13), // Preto Profundo Tecnológico
-      // Botão Flutuante do WhatsApp
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF25D366), // Verde WhatsApp Oficial
         foregroundColor: Colors.white,
@@ -253,12 +263,11 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       ),
       body: Stack(
         children: [
-          // CONTEÚDO SCROLLÁVEL DO SITE
           CustomScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // 1. NAVBAR RESPONSIVA COM EFEITO BLUR E DESIGN PREMIUM
+              // 1. NAVBAR RESPONSIVA
               SliverAppBar(
                 backgroundColor: const Color(0xFF0C0F13).withValues(alpha: 0.95),
                 floating: true,
@@ -295,7 +304,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     ),
                     const Spacer(),
 
-                    // Links Centrais de Navegação (Desktop)
+                    // Links Centrais
                     if (isDesktop) ...[
                       _buildNavLink(
                           'Início',
@@ -304,12 +313,16 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                               curve: Curves.easeInOut)),
                       _buildNavLink('Demonstração',
                           () => _rolarParaSecao(_simuladorKey)),
+                      _buildNavLink(
+                          'Cercas Virtuais', () => _rolarParaSecao(_cercasKey)),
+                      _buildNavLink(
+                          'Relatórios', () => _rolarParaSecao(_relatoriosKey)),
                       _buildNavLink('Recursos',
                           () => _rolarParaSecao(_recursosKey)),
                       _buildNavLink(
                           'Planos', () => _rolarParaSecao(_planosKey)),
                       _buildNavLink('FAQ', () => _rolarParaSecao(_faqKey)),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 14),
                     ],
 
                     // Botão Login
@@ -371,22 +384,34 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    // HERO SECTION COM RADAR HOLOGRÁFICO ANIMADO
+                    // HERO SECTION COM RADAR HOLOGRÁFICO
                     _buildHeroSectionComRadar(isDesktop),
 
-                    // BARRA DE CATEGORIAS RÁPIDAS
+                    // BARRA DE CATEGORIAS PROFISSIONAIS
                     _buildCategoriasBar(isDesktop),
 
-                    // TRUST BAR
+                    // TRUST BAR REALISTA
                     _buildTrustBar(isDesktop),
 
-                    // SIMULADOR INTERATIVO DO APP (SUPER FRUFRU & ATRAÇÃO)
+                    // SIMULADOR INTERATIVO COM MAPA REAL DE MACAÉ / RIO DAS OSTRAS
                     Container(
                       key: _simuladorKey,
                       child: _buildSecaoSimuladorInterativo(isDesktop),
                     ),
 
-                    // SELOS DE AUTORIDADE & HOMOLOGAÇÃO
+                    // SEÇÃO DE DESTAQUE: CERCAS VIRTUAIS
+                    Container(
+                      key: _cercasKey,
+                      child: _buildSecaoCercasVirtuais(isDesktop),
+                    ),
+
+                    // SEÇÃO DE DESTAQUE: RELATÓRIOS E TELEMETRIA
+                    Container(
+                      key: _relatoriosKey,
+                      child: _buildSecaoRelatorios(isDesktop),
+                    ),
+
+                    // SELOS DE TECNOLOGIA E HOMOLOGAÇÃO
                     _buildSelosAutoridade(isDesktop),
 
                     // SEÇÃO: PRINCIPAIS RECURSOS
@@ -395,7 +420,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       child: _buildSecaoRecursos(isDesktop),
                     ),
 
-                    // SIMULADOR DE VEÍCULOS / FROTAS + TABELA DE PLANOS
+                    // TABELA DE PLANOS COM SELETOR DE VEÍCULOS
                     Container(
                       key: _planosKey,
                       child: _buildSecaoPlanosComSeletor(isDesktop),
@@ -418,7 +443,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
             ],
           ),
 
-          // 3. TOAST FLUTUANTE DE PROVA SOCIAL DINÂMICA (CANTO INFERIOR ESQUERDO)
+          // 3. TOAST FLUTUANTE DE PROVA SOCIAL AO VIVO
           if (isDesktop || isTablet)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 400),
@@ -432,7 +457,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 1. HERO SECTION COM RADAR HOLOGRÁFICO ANIMADO ---
+  // --- 1. HERO SECTION COM RADAR ---
   Widget _buildHeroSectionComRadar(bool isDesktop) {
     return Container(
       width: double.infinity,
@@ -446,7 +471,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           center: Alignment(0.4, -0.5),
           radius: 1.4,
           colors: [
-            Color(0x33FF5252), // Vermelho Target
+            Color(0x33FF5252),
             Color(0xFF0C0F13),
           ],
         ),
@@ -457,7 +482,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Fundo: Radar Militar Animado
               Positioned.fill(
                 child: Opacity(
                   opacity: 0.35,
@@ -471,12 +495,9 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   ),
                 ),
               ),
-
-              // Conteúdo em Primeiro Plano
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Badge Superior (Tecnologia de Ponta)
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
@@ -519,8 +540,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Headline
                   RichText(
                     textAlign: TextAlign.center,
                     text: const TextSpan(
@@ -543,17 +562,15 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                             ],
                           ),
                         ),
-                        TextSpan(text: ' para seu\nVeículo ou Embarcação'),
+                        TextSpan(text: ' para seu\nCarro, Moto ou Frota'),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Subtítulo
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 720),
                     child: const Text(
-                      'Rastreamento veicular e náutico via satélite, com acesso 24h pelo celular ou computador. Alertas de ignição no WhatsApp e bloqueio remoto instantâneo.',
+                      'Rastreamento veicular via satélite com cobertura 4G, cercas virtuais inteligentes, relatórios gerenciais e bloqueio de motor imediato na palma da sua mão.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Color(0xFF9E9E9E),
@@ -563,14 +580,11 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     ),
                   ),
                   const SizedBox(height: 36),
-
-                  // Botões de Ação
                   Wrap(
                     spacing: 16,
                     runSpacing: 14,
                     alignment: WrapAlignment.center,
                     children: [
-                      // Botão Falar no WhatsApp
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF5252),
@@ -592,8 +606,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         onPressed: () => _abrirWhatsApp(
                             'Olá! Gostaria de falar com um especialista sobre o rastreamento da Target.'),
                       ),
-
-                      // Botão Testar Simulador
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
@@ -614,8 +626,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         ),
                         onPressed: () => _rolarParaSecao(_simuladorKey),
                       ),
-
-                      // Botão Login
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
@@ -647,15 +657,15 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 2. BARRA DE CATEGORIAS RÁPIDAS ---
+  // --- 2. BARRA DE CATEGORIAS PROFISSIONAIS ---
   Widget _buildCategoriasBar(bool isDesktop) {
     final categorias = [
-      {'icon': Icons.directions_car, 'nome': 'Carros'},
+      {'icon': Icons.directions_car, 'nome': 'Carros Particulares'},
       {'icon': Icons.two_wheeler, 'nome': 'Motos'},
-      {'icon': Icons.agriculture, 'nome': 'Quadriciclos'},
-      {'icon': Icons.directions_boat, 'nome': 'Lanchas'},
-      {'icon': Icons.waves, 'nome': 'Jet Skis'},
-      {'icon': Icons.local_shipping, 'nome': 'Caminhões e Frotas'},
+      {'icon': Icons.local_shipping, 'nome': 'Caminhões & Vans'},
+      {'icon': Icons.apartment, 'nome': 'Frotas Corporativas'},
+      {'icon': Icons.agriculture, 'nome': 'Máquinas & Maquinários'},
+      {'icon': Icons.storefront, 'nome': 'Empresas & Logística'},
     ];
 
     return Container(
@@ -666,15 +676,15 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1100),
           child: Wrap(
-            spacing: isDesktop ? 40 : 20,
-            runSpacing: 14,
+            spacing: isDesktop ? 36 : 18,
+            runSpacing: 12,
             alignment: WrapAlignment.center,
             children: categorias.map((c) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(c['icon'] as IconData,
-                      color: const Color(0xFFFF5252), size: 19),
+                      color: const Color(0xFFFF5252), size: 18),
                   const SizedBox(width: 8),
                   Text(
                     c['nome'] as String,
@@ -693,20 +703,20 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 3. TRUST BAR (MÉTRICAS) ---
+  // --- 3. TRUST BAR (REALISTA E SÓLIDA) ---
   Widget _buildTrustBar(bool isDesktop) {
     final itens = [
       {
-        'icon': Icons.verified_user_outlined,
-        'texto': '+5.000 veículos monitorados'
+        'icon': Icons.cell_tower,
+        'texto': 'Cobertura 4G em Macaé, Rio das Ostras e Região'
       },
-      {'icon': Icons.cell_tower, 'texto': 'Tecnologia 4G Multi-Operadora'},
-      {'icon': Icons.devices, 'texto': 'Acesso Web, Android e iPhone'},
-      {'icon': Icons.lock_outline, 'texto': 'Bloqueio remoto antifurto'},
-      {'icon': Icons.history, 'texto': 'Histórico de rotas 24/7'},
+      {'icon': Icons.fence_outlined, 'texto': 'Cercas Virtuais com Avisos no WhatsApp'},
+      {'icon': Icons.description_outlined, 'texto': 'Relatórios de Km e Horímetro'},
+      {'icon': Icons.lock_outline, 'texto': 'Bloqueio Remoto Antifurto'},
+      {'icon': Icons.history, 'texto': 'Histórico Completo de Trajetos'},
       {
         'icon': Icons.support_agent,
-        'texto': 'Suporte via WhatsApp (22) 99769-4019'
+        'texto': 'Suporte Humanizado (22) 99769-4019'
       },
     ];
 
@@ -745,7 +755,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 4. SIMULADOR INTERATIVO DO APP (SUPER DESTAQUE!) ---
+  // --- 4. SIMULADOR INTERATIVO COM MAPA REAL DE MACAÉ / RIO DAS OSTRAS ---
   Widget _buildSecaoSimuladorInterativo(bool isDesktop) {
     return Container(
       width: double.infinity,
@@ -770,7 +780,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           constraints: const BoxConstraints(maxWidth: 1240),
           child: Column(
             children: [
-              // Cabeçalho da Seção
               const Text(
                 'EXPERIMENTE AO VIVO',
                 style: TextStyle(
@@ -792,13 +801,13 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               ),
               const SizedBox(height: 8),
               const Text(
-                'Clique nos botões abaixo para testar o bloqueio de motor, aceleração e alertas no WhatsApp em tempo real.',
+                'Veja ruas reais de Rio das Ostras e Macaé no mapa, teste cercas virtuais, relatórios e bloqueio de motor.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: 32),
 
-              // Seletor de Tipo de Veículo (Carro, Moto, Lancha)
+              // Seletor de Tipo de Veículo
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF1A212B),
@@ -812,39 +821,36 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     _buildBotaoTipoVeiculo(
                       tipo: 'carro',
                       icone: Icons.directions_car,
-                      label: 'Carro (MQA-6E92)',
+                      label: 'Carro (Toyota Corolla)',
                     ),
                     _buildBotaoTipoVeiculo(
                       tipo: 'moto',
                       icone: Icons.two_wheeler,
-                      label: 'Moto (CB 650R)',
+                      label: 'Moto (Honda CB 650R)',
                     ),
                     _buildBotaoTipoVeiculo(
-                      tipo: 'lancha',
-                      icone: Icons.directions_boat,
-                      label: 'Lancha (Real 32)',
+                      tipo: 'frota',
+                      icone: Icons.local_shipping,
+                      label: 'Frota (Mercedes Accelo)',
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 36),
 
-              // Layout Principal: Smartphone Interativo + Controles
               isDesktop
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Smartphone Interativo
-                        Expanded(flex: 5, child: _buildSmartphoneInterativo()),
+                        Expanded(flex: 5, child: _buildSmartphoneComMapaReal()),
                         const SizedBox(width: 48),
-                        // Painel de Testes & Botões Interativos
                         Expanded(flex: 5, child: _buildPainelControlesTeste()),
                       ],
                     )
                   : Column(
                       children: [
-                        _buildSmartphoneInterativo(),
+                        _buildSmartphoneComMapaReal(),
                         const SizedBox(height: 36),
                         _buildPainelControlesTeste(),
                       ],
@@ -884,7 +890,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icone, size: 18, color: ativo ? Colors.white : const Color(0xFF9E9E9E)),
+            Icon(icone,
+                size: 18, color: ativo ? Colors.white : const Color(0xFF9E9E9E)),
             const SizedBox(width: 8),
             Text(
               label,
@@ -900,24 +907,28 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- SMARTPHONE INTERATIVO COM SIMULAÇÃO AO VIVO ---
-  Widget _buildSmartphoneInterativo() {
+  // --- SMARTPHONE INTERATIVO COM FLUTTERMAP REAL (RUAS DE RIO DAS OSTRAS & MACAÉ) ---
+  Widget _buildSmartphoneComMapaReal() {
     final String nomeVeiculo;
     final String placaVeiculo;
     final String cidadeVeiculo;
+    final LatLng pontoMapa;
 
     if (_veiculoSelecionado == 'carro') {
-      nomeVeiculo = 'Carro de Mamãe';
-      placaVeiculo = 'MQA6E92';
+      nomeVeiculo = 'Toyota Corolla XEi';
+      placaVeiculo = 'BRA2E19';
       cidadeVeiculo = 'Rio das Ostras - RJ';
+      pontoMapa = _coordRioDasOstras;
     } else if (_veiculoSelecionado == 'moto') {
       nomeVeiculo = 'Honda CB 650R';
       placaVeiculo = 'RIO2G24';
       cidadeVeiculo = 'Macaé - RJ';
+      pontoMapa = _coordMacae;
     } else {
-      nomeVeiculo = 'Lancha Real 32';
-      placaVeiculo = 'BR-BUZ32';
-      cidadeVeiculo = 'Marina Porto Búzios - RJ';
+      nomeVeiculo = 'Mercedes Accelo (Veículo 04)';
+      placaVeiculo = 'TRG4F88';
+      cidadeVeiculo = 'Pólo Offshore, Macaé - RJ';
+      pontoMapa = _coordMacae;
     }
 
     final corStatus = _motorBloqueado
@@ -932,13 +943,15 @@ class _LandingPageScreenState extends State<LandingPageScreen>
 
     return Center(
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 380),
+        constraints: const BoxConstraints(maxWidth: 390),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1E24),
+          color: const Color(0xFF161B22),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(
-            color: _motorBloqueado ? const Color(0xFFFF5252) : const Color(0xFF334155),
+            color: _motorBloqueado
+                ? const Color(0xFFFF5252)
+                : const Color(0xFF334155),
             width: _motorBloqueado ? 2.5 : 2,
           ),
           boxShadow: [
@@ -955,7 +968,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Notch / Topo do Celular
+            // Notch
             Center(
               child: Container(
                 width: 90,
@@ -978,7 +991,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
             ),
             const SizedBox(height: 12),
 
-            // Cabeçalho da Central
+            // Topo da Central Target
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1029,14 +1042,33 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
-            // Card do Veículo com Placa Mercosul
+            // ABAS INTERNAS NO SMARTPHONE (MAPA, CERCA VIRTUAL, RELATÓRIO)
             Container(
-              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF21262D)),
+              ),
+              padding: const EdgeInsets.all(3),
+              child: Row(
+                children: [
+                  _buildSubAbaCelular('mapa', Icons.map_outlined, 'Mapa'),
+                  _buildSubAbaCelular('cerca', Icons.fence_outlined, 'Cerca'),
+                  _buildSubAbaCelular(
+                      'relatorios', Icons.description_outlined, 'Relatórios'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Card do Veículo com Placa Mercosul Genérica
+            Container(
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: const Color(0xFF10141A),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFF263238)),
               ),
               child: Row(
@@ -1056,7 +1088,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           nomeVeiculo,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 13.5,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1119,91 +1151,220 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-            // Minimapa Interativo com Radar Tecnológico
-            Container(
-              height: 170,
-              decoration: BoxDecoration(
-                color: const Color(0xFF090D12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF1E293B)),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Grade do Mapa
-                  Positioned.fill(
-                      child: CustomPaint(painter: _GridMapPainter())),
-
-                  // Trajeto desenhado quando em movimento
-                  if (_emMovimento)
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _RotaSimuladaPainter(),
-                      ),
-                    ),
-
-                  // Ícone do Veículo com Pulso e Rotação
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
+            // CONTEÚDO DINÂMICO CONFORME A SUB-ABA SELECIONADA
+            if (_abaSimulador == 'mapa' || _abaSimulador == 'cerca') ...[
+              // MAPA REAL (OpenStreetMap CartoDB Dark Matter com ruas de Rio das Ostras e Macaé!)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  height: 180,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0D1117),
+                    border: Border.all(color: const Color(0xFF21262D)),
+                  ),
+                  child: Stack(
                     children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _motorBloqueado
-                              ? const Color(0xFFFF5252).withValues(alpha: 0.3)
-                              : corStatus.withValues(alpha: 0.25),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: corStatus,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _veiculoSelecionado == 'moto'
-                                ? Icons.two_wheeler
-                                : (_veiculoSelecionado == 'lancha'
-                                    ? Icons.directions_boat
-                                    : Icons.directions_car),
-                            color: Colors.white,
-                            size: 18,
+                      FlutterMap(
+                        options: MapOptions(
+                          initialCenter: pontoMapa,
+                          initialZoom: 15.5,
+                          interactionOptions: const InteractionOptions(
+                            flags: InteractiveFlag.pinchZoom |
+                                InteractiveFlag.drag,
                           ),
                         ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.target.rastreamento',
+                          ),
+
+                          // SE ESTIVER NA ABA CERCA VIRTUAL: DESENHA O CÍRCULO DA CERCA SOBRE AS RUAS!
+                          if (_abaSimulador == 'cerca')
+                            CircleLayer(
+                              circles: [
+                                CircleMarker(
+                                  point: pontoMapa,
+                                  radius: 140, // raio em metros
+                                  useRadiusInMeter: true,
+                                  color: const Color(0xFFFF5252)
+                                      .withValues(alpha: 0.22),
+                                  borderColor: const Color(0xFFFF5252),
+                                  borderStrokeWidth: 2,
+                                ),
+                              ],
+                            ),
+
+                          // MARCADOR DO VEÍCULO COM ÍCONE E BADGE
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: pontoMapa,
+                                width: 70,
+                                height: 70,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 5, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black87,
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                            color: corStatus, width: 1),
+                                      ),
+                                      child: Text(
+                                        placaVeiculo,
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 8.5,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: corStatus,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: corStatus.withValues(alpha: 0.5),
+                                            blurRadius: 8,
+                                            spreadRadius: 1,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        _veiculoSelecionado == 'moto'
+                                            ? Icons.two_wheeler
+                                            : Icons.directions_car,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.black87,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          _motorBloqueado
-                              ? 'IGNIÇÃO CORTADA'
-                              : (_emMovimento
-                                  ? '${_velocidade.toInt()} km/h'
-                                  : '-22.504771, -41.920289'),
-                          style: TextStyle(
-                            color: _motorBloqueado
-                                ? const Color(0xFFFF5252)
-                                : Colors.white70,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'monospace',
+
+                      // Badge flutuante do mapa indicando rua e cidade
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF161B22).withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFF2C3E50)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _abaSimulador == 'cerca'
+                                    ? Icons.fence
+                                    : Icons.location_on,
+                                color: const Color(0xFFFF5252),
+                                size: 13,
+                              ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  _abaSimulador == 'cerca'
+                                      ? 'Cerca Residencial: ATIVA (Raio 140m)'
+                                      : 'Av. Brasília • Rio das Ostras - RJ',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
+            ] else ...[
+              // ABA RELATÓRIOS DO VEÍCULO (TELEMETRIA COMPLETA)
+              Container(
+                height: 180,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D1117),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF21262D)),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('RESUMO DO DIA',
+                              style: TextStyle(
+                                  color: Color(0xFFFF5252),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1)),
+                          Text('25/10/2026',
+                              style: TextStyle(
+                                  color: Color(0xFF9E9E9E), fontSize: 10)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      _buildLinhaRelatorio('Quilometragem Percorrida', '42,6 km',
+                          Icons.route_outlined),
+                      _buildLinhaRelatorio('Tempo em Trânsito', '1h 38 min',
+                          Icons.timer_outlined),
+                      _buildLinhaRelatorio('Tempo Estacionado', '6h 12 min',
+                          Icons.local_parking_outlined),
+                      _buildLinhaRelatorio('Velocidade Máxima', '68 km/h',
+                          Icons.speed_outlined),
+                      _buildLinhaRelatorio(
+                          'Total de Paradas', '4 locais', Icons.pin_drop_outlined),
+                      const Divider(color: Color(0xFF21262D), height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Status da Cerca:',
+                              style: TextStyle(
+                                  color: Color(0xFF9E9E9E), fontSize: 10.5)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00E676).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text('Sem violações',
+                                style: TextStyle(
+                                    color: Color(0xFF00E676),
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 10),
 
             // Status Bar no Rodapé do Celular
             Container(
@@ -1260,13 +1421,68 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- PAINEL DE CONTROLES DO SIMULADOR (BOTÕES DE TESTE AO VIVO) ---
+  Widget _buildSubAbaCelular(String chave, IconData icone, String label) {
+    final ativo = _abaSimulador == chave;
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => setState(() => _abaSimulador = chave),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: ativo ? const Color(0xFFFF5252) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone,
+                  size: 13, color: ativo ? Colors.white : const Color(0xFF9E9E9E)),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: ativo ? Colors.white : const Color(0xFF9E9E9E),
+                  fontSize: 11,
+                  fontWeight: ativo ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLinhaRelatorio(String rotulo, String valor, IconData icone) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.5),
+      child: Row(
+        children: [
+          Icon(icone, size: 13, color: const Color(0xFF9E9E9E)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(rotulo,
+                style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 11)),
+          ),
+          Text(valor,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  // --- PAINEL DE CONTROLES DO SIMULADOR ---
   Widget _buildPainelControlesTeste() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'TESTE OS COMANDOS REMOTOS',
+          'COMANDOS E TELEMETRIA',
           style: TextStyle(
             color: Color(0xFFFF5252),
             fontSize: 12,
@@ -1276,7 +1492,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         ),
         const SizedBox(height: 8),
         const Text(
-          'Controle total na palma da sua mão',
+          'Controle total do seu veículo',
           style: TextStyle(
             color: Colors.white,
             fontSize: 26,
@@ -1285,15 +1501,15 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         ),
         const SizedBox(height: 8),
         const Text(
-          'Experimente como funciona o comando de bloqueio e como você recebe os alertas caso alguém ligue o seu veículo:',
+          'Teste os comandos remotos abaixo e veja a resposta em tempo real no mapa e nos relatórios de telemetria:',
           style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13.5, height: 1.4),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
-        // Botão 1: Testar Bloqueio / Desbloqueio
+        // Botão 1: Bloqueio / Desbloqueio
         SizedBox(
           width: double.infinity,
-          height: 54,
+          height: 52,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: _motorBloqueado
@@ -1312,19 +1528,19 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   ? 'DESBLOQUEAR MOTOR'
                   : 'TESTAR BLOQUEIO DE MOTOR',
               style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.8),
             ),
             onPressed: _testarBloqueioMotor,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
-        // Botão 2: Simular Movimento / Aceleração
+        // Botão 2: Movimento
         SizedBox(
           width: double.infinity,
-          height: 52,
+          height: 50,
           child: OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
@@ -1335,52 +1551,49 @@ class _LandingPageScreenState extends State<LandingPageScreen>
             ),
             icon: Icon(
               _emMovimento ? Icons.stop_circle_outlined : Icons.play_arrow,
-              size: 22,
+              size: 20,
               color: _emMovimento
                   ? const Color(0xFFFF5252)
                   : const Color(0xFF00E676),
             ),
             label: Text(
               _emMovimento ? 'PARAR VEÍCULO' : 'SIMULAR MOVIMENTO (ACELERAR)',
-              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
             onPressed: _alternarMovimento,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
-        // Botão 3: Ver Notificação no WhatsApp
+        // Botão 3: Testar Violação de Cerca
         SizedBox(
           width: double.infinity,
-          height: 52,
+          height: 50,
           child: OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF25D366),
-              side: const BorderSide(color: Color(0xFF25D366), width: 1.5),
-              backgroundColor: const Color(0xFF131F18),
+              foregroundColor: const Color(0xFFFFB300),
+              side: const BorderSide(color: Color(0xFFFFB300), width: 1.5),
+              backgroundColor: const Color(0xFF1C1912),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            icon: const Icon(Icons.chat_outlined, size: 20),
-            label: Text(
-              _mostrarAlertaWhatsapp
-                  ? 'OCULTAR ALERTA DO WHATSAPP'
-                  : 'VER ALERTA NO WHATSAPP (MOCKUP)',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            icon: const Icon(Icons.fence, size: 20),
+            label: const Text(
+              'TESTAR ALERTA DE CERCA VIRTUAL',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
-            onPressed: _simularAlertaWhatsapp,
+            onPressed: _simularViolacaoCerca,
           ),
         ),
 
-        // MOCKUP REALISTA DO ALERTA NO WHATSAPP (QUANDO ATIVADO)
+        // MOCKUP DO ALERTA NO WHATSAPP
         if (_mostrarAlertaWhatsapp) ...[
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           _buildMockupAlertaWhatsapp(),
         ],
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
 
-        // CTA para Contratar pelo WhatsApp
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -1395,7 +1608,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
-                  'Pronto para proteger seu veículo? Fale agora com nossa central no WhatsApp.',
+                  'Instalação rápida em Rio das Ostras, Macaé e região. Fale com nossa central.',
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ),
@@ -1410,8 +1623,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: () => _abrirWhatsApp(
-                    'Olá! Testei o simulador no site da Target e quero contratar para meu veículo.'),
-                child: const Text('Contratar',
+                    'Olá! Gostaria de agendar a instalação do rastreador Target no meu veículo.'),
+                child: const Text('Agendar',
                     style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
@@ -1423,9 +1636,17 @@ class _LandingPageScreenState extends State<LandingPageScreen>
 
   // --- MOCKUP DO ALERTA NO WHATSAPP ---
   Widget _buildMockupAlertaWhatsapp() {
+    final bool isCerca = _tipoAlertaWhatsapp == 'cerca';
+    final titulo = isCerca
+        ? '🚨 ALERTA: VEÍCULO SAIU DA CERCA!'
+        : '🚨 ALERTA: BLOQUEIO TRANSMITIDO!';
+    final detalhe = isCerca
+        ? 'Veículo: Toyota Corolla (BRA2E19)\nPerímetro: Cerca Garagem\nLocal: Av. Brasília, Rio das Ostras - RJ\nHorário: Agora • Status: Fora do limite permitido'
+        : 'Veículo: Toyota Corolla (BRA2E19)\nComando: Imobilização Remota de Motor\nLocal: Rio das Ostras - RJ\nStatus: Ignição Cortada com Sucesso';
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0B141A), // Fundo WhatsApp Dark
+        color: const Color(0xFF0B141A),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF202C33)),
         boxShadow: const [
@@ -1435,7 +1656,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Cabeçalho WhatsApp
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: const BoxDecoration(
@@ -1461,42 +1681,41 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               ],
             ),
           ),
-
-          // Corpo da Mensagem
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF005C4B), // Verde do balão enviado WhatsApp
+                color: const Color(0xFF005C4B),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.warning_amber,
-                          color: Color(0xFFFFD600), size: 16),
-                      SizedBox(width: 6),
+                      Icon(isCerca ? Icons.fence : Icons.lock,
+                          color: const Color(0xFFFFD600), size: 16),
+                      const SizedBox(width: 6),
                       Text(
-                        '🚨 ALERTA: IGNIÇÃO ACIONADA!',
-                        style: TextStyle(
+                        titulo,
+                        style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 12.5,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Veículo: Carro de Mamãe (MQA-6E92)\nLocal: Av. Brasília, Rio das Ostras - RJ\nHorário: 19:48:12\nVelocidade: 0 km/h',
-                    style: TextStyle(color: Colors.white, fontSize: 11.5, height: 1.35),
+                  Text(
+                    detalhe,
+                    style: const TextStyle(
+                        color: Colors.white, fontSize: 11, height: 1.35),
                   ),
                   const SizedBox(height: 8),
                   const Divider(color: Colors.white24, height: 1),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1505,14 +1724,13 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           foregroundColor: const Color(0xFFFF5252),
                           padding: EdgeInsets.zero,
                         ),
-                        icon: const Icon(Icons.lock, size: 14),
-                        label: const Text('Bloquear Motor',
+                        icon: const Icon(Icons.lock, size: 13),
+                        label: const Text('Bloquear Agora',
                             style: TextStyle(
                                 fontSize: 11, fontWeight: FontWeight.bold)),
                         onPressed: () {
                           _testarBloqueioMotor();
-                          _mostrarMensagem(
-                              'Comando de BLOQUEIO enviado com sucesso!');
+                          _mostrarMensagem('Comando de Bloqueio executado!');
                         },
                       ),
                       TextButton.icon(
@@ -1520,7 +1738,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.zero,
                         ),
-                        icon: const Icon(Icons.map, size: 14),
+                        icon: const Icon(Icons.map, size: 13),
                         label: const Text('Ver no Mapa',
                             style: TextStyle(fontSize: 11)),
                         onPressed: _irParaLogin,
@@ -1536,7 +1754,269 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 5. SELOS DE AUTORIDADE & HOMOLOGAÇÃO ---
+  // --- SEÇÃO DE DESTAQUE: CERCAS VIRTUAIS ---
+  Widget _buildSecaoCercasVirtuais(bool isDesktop) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF10141A),
+      padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 60 : 20, vertical: 70),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'ZONAS SEGURAS & GEOFENCING',
+                style: TextStyle(
+                  color: Color(0xFFFF5252),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Cercas Virtuais Inteligentes',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Delimite áreas seguras no mapa (sua casa, trabalho, condomínio ou cidade) e seja avisado instantaneamente caso o veículo saia do perímetro.',
+                style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
+              ),
+              const SizedBox(height: 36),
+
+              Wrap(
+                spacing: 20,
+                runSpacing: 20,
+                children: [
+                  _buildCardCerca(
+                    titulo: 'Cerca Residencial / Garagem',
+                    desc:
+                        'Saiba se o veículo foi movido da sua garagem durante a noite ou fins de semana.',
+                    icone: Icons.home_outlined,
+                    raio: 'Raio de 100m a 300m',
+                    isDesktop: isDesktop,
+                  ),
+                  _buildCardCerca(
+                    titulo: 'Cerca de Trabalho / Galpão',
+                    desc:
+                        'Acompanhe a chegada e saída de funcionários ou motoristas no pátio da empresa.',
+                    icone: Icons.business_outlined,
+                    raio: 'Perímetro Comercial',
+                    isDesktop: isDesktop,
+                  ),
+                  _buildCardCerca(
+                    titulo: 'Cerca Municipal (Macaé & Rio das Ostras)',
+                    desc:
+                        'Defina limites municipais ou interestaduais para receber alerta caso o veículo saia da região.',
+                    icone: Icons.map_outlined,
+                    raio: 'Limite da Cidade',
+                    isDesktop: isDesktop,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardCerca({
+    required String titulo,
+    required String desc,
+    required IconData icone,
+    required String raio,
+    required bool isDesktop,
+  }) {
+    return Container(
+      width: isDesktop ? 370 : double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF2C3E50)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icone, color: const Color(0xFFFF5252), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  titulo,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(desc,
+              style: const TextStyle(
+                  color: Color(0xFF9E9E9E), fontSize: 13, height: 1.4)),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F141A),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFF263238)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.radar, size: 12, color: Color(0xFFFF5252)),
+                const SizedBox(width: 6),
+                Text(raio,
+                    style: const TextStyle(
+                        color: Color(0xFFB0BEC5),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- SEÇÃO DE DESTAQUE: RELATÓRIOS E TELEMETRIA ---
+  Widget _buildSecaoRelatorios(bool isDesktop) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF0C0F13),
+      padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 60 : 20, vertical: 70),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'GESTÃO, CONTROLE & HISTÓRICO',
+                style: TextStyle(
+                  color: Color(0xFFFF5252),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Relatórios Detalhados de Telemetria',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Tenha em mãos relatórios completos de trajetos, velocidades, paradas e horímetro. Exporte em PDF ou Excel a qualquer momento.',
+                style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
+              ),
+              const SizedBox(height: 36),
+
+              Wrap(
+                spacing: 20,
+                runSpacing: 20,
+                children: [
+                  _buildCardRelatorio(
+                    titulo: 'Histórico de Trajetos e Rotas',
+                    desc:
+                        'Consulte por onde o veículo passou nos últimos 90 dias, com reprodução do percurso no mapa e paradas.',
+                    icone: Icons.timeline,
+                    isDesktop: isDesktop,
+                  ),
+                  _buildCardRelatorio(
+                    titulo: 'Relatório de Paradas e Endereços',
+                    desc:
+                        'Endereço exato de cada local onde o carro parou, horário de chegada, saída e tempo de permanência.',
+                    icone: Icons.pin_drop_outlined,
+                    isDesktop: isDesktop,
+                  ),
+                  _buildCardRelatorio(
+                    titulo: 'Horímetro & Manutenção Preventiva',
+                    desc:
+                        'Tempo exato de motor ligado para controlar manutenções, trocas de óleo e consumo de combustível.',
+                    icone: Icons.timer_outlined,
+                    isDesktop: isDesktop,
+                  ),
+                  _buildCardRelatorio(
+                    titulo: 'Controle de Velocidade',
+                    desc:
+                        'Avisos e gráficos de velocidade máxima e média por trecho. Ideal para disciplina de motoristas em frotas.',
+                    icone: Icons.speed,
+                    isDesktop: isDesktop,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardRelatorio({
+    required String titulo,
+    required String desc,
+    required IconData icone,
+    required bool isDesktop,
+  }) {
+    return Container(
+      width: isDesktop ? 275 : double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF2C3E50)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icone, color: const Color(0xFFFF5252), size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            titulo,
+            style: const TextStyle(
+                color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
+          Text(desc,
+              style: const TextStyle(
+                  color: Color(0xFF9E9E9E), fontSize: 12.5, height: 1.35)),
+        ],
+      ),
+    );
+  }
+
+  // --- SELOS DE AUTORIDADE & HOMOLOGAÇÃO ---
   Widget _buildSelosAutoridade(bool isDesktop) {
     final selos = [
       {
@@ -1552,7 +2032,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       {
         'icone': Icons.shield,
         'titulo': 'Bloqueio Progressivo',
-        'desc': 'Corte de ignição seguro sem risco de acidentes na pista.',
+        'desc': 'Corte de ignição seguro sem risco de acidentes na via.',
       },
       {
         'icone': Icons.battery_charging_full,
@@ -1626,7 +2106,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 6. SEÇÃO: PRINCIPAIS RECURSOS ---
+  // --- SEÇÃO: PRINCIPAIS RECURSOS ---
   Widget _buildSecaoRecursos(bool isDesktop) {
     final recursos = [
       {
@@ -1780,7 +2260,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 7. SEÇÃO DE PLANOS COM SELETOR DE QUANTIDADE DE VEÍCULOS ---
+  // --- SEÇÃO DE PLANOS COM SELETOR DE QUANTIDADE DE VEÍCULOS ---
   Widget _buildSecaoPlanosComSeletor(bool isDesktop) {
     return Container(
       padding: EdgeInsets.symmetric(
@@ -1810,12 +2290,11 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               ),
               const SizedBox(height: 6),
               const Text(
-                'Opções para uso pessoal, embarcações e frotas corporativas. Fale com a gente pelo WhatsApp (22) 99769-4019.',
+                'Opções para uso pessoal e frotas corporativas em Macaé e Rio das Ostras. WhatsApp (22) 99769-4019.',
                 style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
               ),
               const SizedBox(height: 28),
 
-              // SELETOR RÁPIDO DE QUANTIDADE DE VEÍCULOS (FRUTINHA INTERATIVA)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1846,8 +2325,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       children: [
                         _buildBotaoQtd(1, '1 Veículo (Individual)'),
                         _buildBotaoQtd(2, '2 Veículos (Casal/Família)'),
-                        _buildBotaoQtd(4, '3 a 5 Veículos (Família/Comércio)'),
-                        _buildBotaoQtd(10, 'Frotas (+10 Veículos)'),
+                        _buildBotaoQtd(4, '3 a 5 Veículos (Pequena Frota)'),
+                        _buildBotaoQtd(10, 'Frotas Corporativas (+10 Veículos)'),
                       ],
                     ),
                   ],
@@ -1855,7 +2334,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               ),
               const SizedBox(height: 36),
 
-              // Grade de 4 Planos
               LayoutBuilder(
                 builder: (context, constraints) {
                   final colunas =
@@ -1877,7 +2355,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         beneficios: [
                           'Rastreamento em tempo real',
                           'Histórico de rotas',
-                          'Alertas básicos de ignição',
+                          'Cerca virtual residencial',
+                          'Alertas de ignição no celular',
                           'App Android, iOS e Web',
                         ],
                         textoBotao: 'Consultar mensalidade',
@@ -1893,10 +2372,10 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         badgeDestaque: 'MAIS POPULAR',
                         beneficios: [
                           'Tudo do Plano Essencial',
-                          'Acesso à plataforma Target PRO',
-                          'Relatórios avançados',
+                          'Cercas virtuais ilimitadas',
+                          'Relatórios avançados (PDF/Excel)',
+                          'Alertas de ignição no WhatsApp',
                           'Gestão de múltiplos veículos',
-                          'Alertas no WhatsApp 24h',
                         ],
                         textoBotao: 'Contratar plano Pro',
                         onTap: () => _abrirWhatsApp(
@@ -1912,7 +2391,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           'Rastreador 4G incluso',
                           'Aplicativo Android, iOS e Web',
                           'Bloqueador remoto incluso',
-                          'Instalação por conta do cliente',
+                          'Instalação com suporte técnico',
                           'Contrato mínimo de 12 meses',
                         ],
                         textoBotao: 'Contratar plano Flex',
@@ -1920,20 +2399,20 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                             'Olá! Gostaria de contratar o Plano Flex com rastreador incluso para $_quantidadeVeiculos veículo(s).'),
                       ),
                       _buildCardPlano(
-                        categoria: 'EMPRESARIAL & NÁUTICO',
-                        titulo: 'Frotas & Barcos',
+                        categoria: 'EMPRESARIAL & LOGÍSTICA',
+                        titulo: 'Frotas',
                         preco: 'Condições especiais',
                         subpreco: 'Solução sob medida para empresas',
                         destaque: false,
                         beneficios: [
                           'Gestão unificada em 1 painel',
-                          'Monitoramento náutico via satélite',
-                          'Relatórios gerenciais customizados',
-                          'Atendimento exclusivo via WhatsApp',
+                          'Relatórios de paradas e horímetro',
+                          'Controle de velocidade de motoristas',
+                          'Atendimento comercial exclusivo',
                         ],
-                        textoBotao: 'Solicitar proposta comercial',
+                        textoBotao: 'Solicitar proposta para frota',
                         onTap: () => _abrirWhatsApp(
-                            'Olá! Gostaria de uma proposta corporativa para frota/embarcação ($_quantidadeVeiculos veículos).'),
+                            'Olá! Gostaria de uma proposta corporativa para frota ($_quantidadeVeiculos veículos).'),
                       ),
                     ],
                   );
@@ -2103,23 +2582,28 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 8. SEÇÃO: FAQ ---
+  // --- SEÇÃO: FAQ ---
   Widget _buildSecaoFaq(bool isDesktop) {
     final perguntas = [
       {
         'p': 'Como funciona a contratação do serviço?',
         'r':
-            'Basta clicar no botão do WhatsApp e falar diretamente com nossa equipe pelo (22) 99769-4019. Agendamos a instalação ou enviamos o rastreador já configurado para o seu endereço.',
+            'Basta clicar no botão do WhatsApp e falar diretamente com nossa equipe pelo (22) 99769-4019. Agendamos a instalação rápida em Rio das Ostras, Macaé ou enviamos o rastreador configurado para você.',
       },
       {
-        'p': 'O rastreador descarrega a bateria do meu veículo ou barco?',
+        'p': 'O que é e como funciona a Cerca Virtual?',
+        'r':
+            'Você delimita perímetros no mapa (sua casa, trabalho, cidade). Se o veículo cruzar o limite delimitado fora do horário habitual, seu WhatsApp apita na hora com o aviso!',
+      },
+      {
+        'p': 'Quais relatórios o sistema gera?',
+        'r':
+            'Relatórios de quilometragem percorrida, horímetro com tempo de motor ligado, histórico de trajetos com reprodução no mapa, paradas realizadas e controle de velocidade. Podem ser exportados em PDF ou Excel.',
+      },
+      {
+        'p': 'O rastreador descarrega a bateria da moto ou carro?',
         'r':
             'Não! Nossos equipamentos possuem tecnologia inteligente de baixo consumo e bateria interna de backup, entrando em modo repouso quando a ignição está desligada.',
-      },
-      {
-        'p': 'Posso acompanhar pelo computador e pelo celular ao mesmo tempo?',
-        'r':
-            'Sim! A Target disponibiliza acesso ilimitado via Web para computadores e aplicativo compatível com Android e iOS.',
       },
       {
         'p': 'Como funciona o bloqueio remoto em caso de roubo?',
@@ -2199,7 +2683,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 9. SEÇÃO: CTA FINAL ---
+  // --- SEÇÃO: CTA FINAL ---
   Widget _buildSecaoCtaFinal() {
     return Container(
       width: double.infinity,
@@ -2214,7 +2698,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   color: Color(0xFFFF5252), size: 44),
               const SizedBox(height: 16),
               const Text(
-                'Proteja seu veículo ou embarcação hoje mesmo',
+                'Proteja seu veículo com tecnologia de verdade',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: Colors.white,
@@ -2223,7 +2707,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               ),
               const SizedBox(height: 10),
               const Text(
-                'Fale com nossos especialistas agora pelo WhatsApp (22) 99769-4019 e ative sua segurança 24h.',
+                'Fale com nossos especialistas agora pelo WhatsApp (22) 99769-4019 e ative o rastreamento 4G com cercas virtuais e relatórios.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
               ),
@@ -2272,7 +2756,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 10. FOOTER INSTITUCIONAL ---
+  // --- FOOTER INSTITUCIONAL ---
   Widget _buildFooter() {
     return Container(
       width: double.infinity,
@@ -2286,7 +2770,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const TargetLogo(iconSize: 40),
               const SizedBox(height: 14),
               const Text(
-                'Target Rastreamento Veicular & Náutico • WhatsApp: (22) 99769-4019',
+                'Target Rastreamento Veicular • Macaé & Rio das Ostras - RJ • WhatsApp: (22) 99769-4019',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: Color(0xFFB0BEC5),
@@ -2305,7 +2789,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- WIDGET DO TOAST DE PROVA SOCIAL DINÂMICA ---
   Widget _buildToastProvaSocial() {
     final notif = _notificacoesSociais[_indiceNotificacaoAtual];
     return Container(
@@ -2406,7 +2889,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   }
 }
 
-// --- PAINTER DO RADAR MILITAR HOLOGRÁFICO ANIMADO ---
+// PAINTER DO RADAR MILITAR HOLOGRÁFICO
 class _RadarMilitarPainter extends CustomPainter {
   final double progress;
 
@@ -2422,12 +2905,10 @@ class _RadarMilitarPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    // Círculos concêntricos do radar
     for (int i = 1; i <= 4; i++) {
       canvas.drawCircle(center, maxRadius * (i / 4), circlePaint);
     }
 
-    // Linhas de Mira Eixo X e Y
     final crossPaint = Paint()
       ..color = const Color(0xFFFF5252).withValues(alpha: 0.15)
       ..strokeWidth = 1.0;
@@ -2436,7 +2917,6 @@ class _RadarMilitarPainter extends CustomPainter {
     canvas.drawLine(Offset(center.dx, center.dy - maxRadius),
         Offset(center.dx, center.dy + maxRadius), crossPaint);
 
-    // Feixe rotativo de varredura (Sweep Gradient)
     final sweepAngle = progress * 2 * math.pi;
     final sweepPaint = Paint()
       ..shader = SweepGradient(
@@ -2464,50 +2944,4 @@ class _RadarMilitarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RadarMilitarPainter oldDelegate) => true;
-}
-
-// Painter para grade do mapa
-class _GridMapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF1E2633)
-      ..strokeWidth = 0.8;
-
-    const step = 20.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Painter de traçado de rota simulada
-class _RotaSimuladaPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF00E676).withValues(alpha: 0.6)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-    path.moveTo(size.width * 0.15, size.height * 0.8);
-    path.quadraticBezierTo(
-      size.width * 0.4,
-      size.height * 0.3,
-      size.width * 0.5,
-      size.height * 0.5,
-    );
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
