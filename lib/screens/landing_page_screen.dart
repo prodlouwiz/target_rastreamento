@@ -2335,93 +2335,159 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               ),
               const SizedBox(height: 36),
 
+              // OS 3 CARTÕES DE PLANOS
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final colunas =
-                      isDesktop ? 4 : (constraints.maxWidth > 700 ? 2 : 1);
-                  return GridView.count(
-                    crossAxisCount: colunas,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 18,
-                    mainAxisSpacing: 20,
-                    childAspectRatio: isDesktop ? 0.65 : 0.85,
-                    children: [
-                      _buildCardPlano(
-                        categoria: 'PARA USO PESSOAL',
-                        titulo: 'Essencial',
-                        preco: 'A partir de R\$ 37/mês',
-                        subpreco: 'Controle prático pelo celular',
-                        destaque: false,
-                        beneficios: [
-                          'Rastreamento em tempo real',
-                          'Histórico de rotas',
-                          'Cerca virtual residencial',
-                          'Alertas de ignição no celular',
-                          'App Android, iOS e Web',
-                        ],
-                        textoBotao: 'Consultar mensalidade',
-                        onTap: () => _abrirWhatsApp(
-                            'Olá! Gostaria de consultar o Plano Essencial da Target para $_quantidadeVeiculos veículo(s).'),
-                      ),
-                      _buildCardPlano(
-                        categoria: 'MAIS POPULAR',
-                        titulo: 'Pro',
-                        preco: 'A partir de R\$ 42,00/mês',
-                        subpreco: 'Mais recursos para controle total',
-                        destaque: true,
-                        badgeDestaque: 'MAIS POPULAR',
-                        beneficios: [
-                          'Tudo do Plano Essencial',
-                          'Cercas virtuais ilimitadas',
-                          'Relatórios avançados (PDF/Excel)',
-                          'Alertas de ignição no WhatsApp',
-                          'Gestão de múltiplos veículos',
-                        ],
-                        textoBotao: 'Contratar plano Pro',
-                        onTap: () => _abrirWhatsApp(
-                            'Olá! Gostaria de contratar o Plano Pro da Target para $_quantidadeVeiculos veículo(s).'),
-                      ),
-                      _buildCardPlano(
-                        categoria: 'PARCELADO',
-                        titulo: 'Flex',
-                        preco: 'R\$ 59,90/mês no cartão',
-                        subpreco: 'Sem taxa de adesão — rastreador incluso',
-                        destaque: false,
-                        beneficios: [
-                          'Rastreador 4G incluso',
-                          'Aplicativo Android, iOS e Web',
-                          'Bloqueador remoto incluso',
-                          'Instalação com suporte técnico',
-                          'Contrato mínimo de 12 meses',
-                        ],
-                        textoBotao: 'Contratar plano Flex',
-                        onTap: () => _abrirWhatsApp(
-                            'Olá! Gostaria de contratar o Plano Flex com rastreador incluso para $_quantidadeVeiculos veículo(s).'),
-                      ),
-                      _buildCardPlano(
-                        categoria: 'EMPRESARIAL & LOGÍSTICA',
-                        titulo: 'Frotas',
-                        preco: 'Condições especiais',
-                        subpreco: 'Solução sob medida para empresas',
-                        destaque: false,
-                        beneficios: [
-                          'Gestão unificada em 1 painel',
-                          'Relatórios de paradas e horímetro',
-                          'Controle de velocidade de motoristas',
-                          'Atendimento comercial exclusivo',
-                        ],
-                        textoBotao: 'Solicitar proposta para frota',
-                        onTap: () => _abrirWhatsApp(
-                            'Olá! Gostaria de uma proposta corporativa para frota ($_quantidadeVeiculos veículos).'),
-                      ),
+                  final card1 = _buildCardPlano(
+                    categoria: 'PLANO PADRÃO',
+                    titulo: 'Plano Próprio',
+                    preco: 'R\$ 40,00',
+                    periodicidade: '/mês',
+                    subtitulo: 'Rastreador não incluso (Venda à parte)',
+                    destaque: false,
+                    beneficios: [
+                      'Rastreamento em tempo real 24h',
+                      'App Android, iOS e Web',
+                      'Alertas de ignição e movimento',
+                      'Sem fidelidade de comodato',
                     ],
+                    textoBotao: 'Contratar Plano Próprio',
+                    onTap: () => _abrirWhatsApp(
+                        'Olá! Gostaria de contratar o Plano Próprio (R\$ 40,00/mês) da Target Rastreamento para $_quantidadeVeiculos veículo(s).'),
                   );
+
+                  final card2 = _buildCardPlano(
+                    categoria: 'MAIS POPULAR',
+                    titulo: 'Plano Pro',
+                    preco: 'R\$ 49,99',
+                    periodicidade: '/mês',
+                    subtitulo: 'Rastreador incluso em comodato',
+                    destaque: true,
+                    badgeDestaque: 'MAIS POPULAR',
+                    beneficios: [
+                      'Instalação própria e sigilosa',
+                      'Cercas virtuais e bloqueio remoto',
+                      'Tudo do Plano Próprio',
+                      'Contrato mínimo de 12 meses (renovação automática)',
+                    ],
+                    textoBotao: 'Contratar Plano Pro',
+                    onTap: () => _abrirWhatsApp(
+                        'Olá! Gostaria de contratar o Plano Pro (R\$ 49,99/mês) com rastreador em comodato para $_quantidadeVeiculos veículo(s).'),
+                  );
+
+                  final card3 = _buildCardPlano(
+                    categoria: 'PLANO PADRÃO',
+                    titulo: 'Plano Flex',
+                    preco: 'R\$ 70,00',
+                    periodicidade: '/mês',
+                    subtitulo: 'Rastreador incluso em comodato',
+                    destaque: false,
+                    beneficios: [
+                      'Relatórios customizados completos',
+                      'Controle detalhado de rotas e paradas',
+                      'Tudo do Plano Pro',
+                      'Contrato mínimo de 12 meses (renovação automática)',
+                    ],
+                    textoBotao: 'Contratar Plano Flex',
+                    onTap: () => _abrirWhatsApp(
+                        'Olá! Gostaria de contratar o Plano Flex (R\$ 70,00/mês) com rastreador em comodato para $_quantidadeVeiculos veículo(s).'),
+                  );
+
+                  if (constraints.maxWidth > 920) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: card1),
+                        const SizedBox(width: 20),
+                        Expanded(child: card2),
+                        const SizedBox(width: 20),
+                        Expanded(child: card3),
+                      ],
+                    );
+                  } else {
+                    return Column(
+                      children: [
+                        card1,
+                        const SizedBox(height: 22),
+                        card2,
+                        const SizedBox(height: 22),
+                        card3,
+                      ],
+                    );
+                  }
                 },
               ),
+
+              const SizedBox(height: 36),
+
+              // 4. RODAPÉ DA SECÇÃO DE PLANOS (AVISO DE INSTALAÇÃO PRÓPRIA)
+              _buildBannerRodapeInstalacao(isDesktop),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBannerRodapeInstalacao(bool isDesktop) {
+    return Container(
+      padding: EdgeInsets.all(isDesktop ? 24 : 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFF5252).withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF5252).withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF5252).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.location_on,
+              color: Color(0xFFFF5252),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 18),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '📍 Instalação Própria em Rio das Ostras, Macaé e Região.',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Não terceirizamos a sua segurança. A instalação do rastreador é realizada exclusivamente pela nossa própria equipa técnica, garantindo sigilo absoluto e a integridade do seu veículo. (Serviço com agendamento prévio. Taxa de instalação cobrada à parte).',
+                  style: TextStyle(
+                    color: Color(0xFFB0BEC5),
+                    fontSize: 13.5,
+                    height: 1.55,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2455,7 +2521,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     required String categoria,
     required String titulo,
     required String preco,
-    required String subpreco,
+    required String periodicidade,
+    required String subtitulo,
     required bool destaque,
     String? badgeDestaque,
     required List<String> beneficios,
@@ -2468,117 +2535,177 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: destaque ? const Color(0xFFFF5252) : const Color(0xFF263238),
-          width: destaque ? 2 : 1,
+          width: destaque ? 2 : 1.2,
         ),
         boxShadow: destaque
             ? [
                 BoxShadow(
                   color: const Color(0xFFFF5252).withValues(alpha: 0.25),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
                 ),
               ]
             : null,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (badgeDestaque != null)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF5252),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-              ),
-              child: Center(
-                child: Text(
-                  badgeDestaque,
-                  style: const TextStyle(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(19),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (badgeDestaque != null)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF5252),
+                ),
+                child: Center(
+                  child: Text(
+                    badgeDestaque,
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 1.2),
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  categoria,
-                  style: const TextStyle(
-                      color: Color(0xFF9E9E9E),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2),
-                ),
-                const SizedBox(height: 4),
-                Text(titulo,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900)),
-                const SizedBox(height: 8),
-                Text(
-                  preco,
-                  style: TextStyle(
-                      color: destaque ? const Color(0xFFFF5252) : Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 2),
-                Text(subpreco,
-                    style: const TextStyle(
-                        color: Color(0xFF757575), fontSize: 11)),
-                const Divider(color: Color(0xFF263238), height: 28),
-                ...beneficios.map((b) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.check,
-                            color: Color(0xFFFF5252), size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                            child: Text(b,
-                                style: const TextStyle(
-                                    color: Color(0xFFCCCCCC), fontSize: 12.5))),
-                      ],
+                      letterSpacing: 1.5,
                     ),
-                  );
-                }),
-              ],
-            ),
-          ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: SizedBox(
-              height: 46,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: destaque
-                      ? const Color(0xFFFF5252)
-                      : const Color(0xFF0F141A),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  side: destaque
-                      ? null
-                      : const BorderSide(color: Color(0xFF2C3E50)),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
-                onPressed: onTap,
-                child: Text(textoBotao,
+              ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    categoria,
+                    style: TextStyle(
+                      color: destaque
+                          ? const Color(0xFFFF8A80)
+                          : const Color(0xFF9E9E9E),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    titulo,
                     style: const TextStyle(
-                        fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        preco,
+                        style: TextStyle(
+                          color: destaque
+                              ? const Color(0xFFFF5252)
+                              : Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        periodicidade,
+                        style: const TextStyle(
+                          color: Color(0xFF9E9E9E),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitulo,
+                    style: TextStyle(
+                      color: destaque
+                          ? const Color(0xFFFF8A80)
+                          : const Color(0xFF757575),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Divider(color: Color(0xFF263238), height: 1),
+                  ),
+                  ...beneficios.map((b) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF5252)
+                                  .withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: Color(0xFFFF5252),
+                              size: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              b,
+                              style: const TextStyle(
+                                color: Color(0xFFD6D6D6),
+                                fontSize: 13,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: destaque
+                            ? const Color(0xFFFF5252)
+                            : const Color(0xFF0F141A),
+                        foregroundColor: Colors.white,
+                        elevation: destaque ? 4 : 0,
+                        side: destaque
+                            ? null
+                            : const BorderSide(
+                                color: Color(0xFF2C3E50), width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: onTap,
+                      child: Text(
+                        textoBotao,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
