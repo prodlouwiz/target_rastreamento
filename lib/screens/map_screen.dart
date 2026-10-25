@@ -292,8 +292,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   String get _tileUrl {
     switch (_estiloMapa) {
       case MapStyle.dark:
-        // CartoDB Dark Matter
-        return 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
+        // OpenStreetMap com darkModeTileBuilder (sem marca d'água / sem API key)
+        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
       case MapStyle.streets:
         // OpenStreetMap Padrão
         return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -848,6 +848,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 TileLayer(
                   urlTemplate: _tileUrl,
                   userAgentPackageName: 'com.target.rastreamento',
+                  tileBuilder:
+                      _estiloMapa == MapStyle.dark ? darkModeTileBuilder : null,
                 ),
                 MarkerLayer(markers: _gerarMarcadores()),
               ],

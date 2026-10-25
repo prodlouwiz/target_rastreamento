@@ -1178,8 +1178,9 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         children: [
                           TileLayer(
                             urlTemplate:
-                                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.target.rastreamento',
+                            tileBuilder: darkModeTileBuilder,
                           ),
 
                           // SE ESTIVER NA ABA CERCA VIRTUAL: DESENHA O CÍRCULO DA CERCA SOBRE AS RUAS!
