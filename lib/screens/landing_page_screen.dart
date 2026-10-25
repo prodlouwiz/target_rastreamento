@@ -16,10 +16,11 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _planosKey = GlobalKey();
   final GlobalKey _recursosKey = GlobalKey();
-  final GlobalKey _sobreKey = GlobalKey();
+  final GlobalKey _comoFuncionaKey = GlobalKey();
+  final GlobalKey _faqKey = GlobalKey();
 
-  // WhatsApp oficial da Target para contratação e suporte
-  final String _whatsappNumero = '5522999999999'; // Pode ser atualizado para o número comercial real
+  // WhatsApp oficial da Target
+  static const String _whatsappNumero = '5522997694019';
 
   Future<void> _abrirWhatsApp([String mensagem = 'Olá! Gostaria de mais informações sobre o rastreamento veicular da Target.']) async {
     final uri = Uri.parse('https://wa.me/$_whatsappNumero?text=${Uri.encodeComponent(mensagem)}');
@@ -62,7 +63,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     final isTablet = screenWidth >= 650 && screenWidth < 980;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Preto Profundo
+      backgroundColor: const Color(0xFF0F1216), // Fundo escuro tecnológico
       // Botão Flutuante do WhatsApp
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF25D366), // Verde WhatsApp
@@ -70,18 +71,18 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
         elevation: 6,
         icon: const Icon(Icons.chat, size: 22),
         label: const Text(
-          'Falar no WhatsApp',
+          'WhatsApp (22) 99769-4019',
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
-        onPressed: () => _abrirWhatsApp('Olá! Gostaria de contratar o rastreamento veicular da Target para meu veículo.'),
+        onPressed: () => _abrirWhatsApp('Olá! Gostaria de falar com um especialista sobre o rastreamento Target.'),
       ),
       body: CustomScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // 1. NAVBAR RESPONSIVA
+          // 1. NAVBAR RESPONSIVA COM EFEITO BLUR E DESIGN PREMIUM
           SliverAppBar(
-            backgroundColor: const Color(0xFF121212).withValues(alpha: 0.95),
+            backgroundColor: const Color(0xFF0F1216).withValues(alpha: 0.95),
             floating: true,
             pinned: true,
             elevation: 2,
@@ -117,27 +118,28 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                 ),
                 const Spacer(),
 
-                // Links de Navegação (Apenas Desktop)
+                // Links Centrais de Navegação (Desktop)
                 if (isDesktop) ...[
                   _buildNavLink('Início', () => _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut)),
+                  _buildNavLink('Como Funciona', () => _rolarParaSecao(_comoFuncionaKey)),
                   _buildNavLink('Recursos', () => _rolarParaSecao(_recursosKey)),
-                  _buildNavLink('Para Quem É', () => _rolarParaSecao(_sobreKey)),
                   _buildNavLink('Planos', () => _rolarParaSecao(_planosKey)),
-                  const SizedBox(width: 20),
+                  _buildNavLink('FAQ', () => _rolarParaSecao(_faqKey)),
+                  const SizedBox(width: 16),
                 ],
 
-                // Botão "Já sou cliente" (Abre tela de login / telemetria)
+                // Botão "Login" com estilo moderno e destaque
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0xFF333333), width: 1.2),
+                    side: const BorderSide(color: Color(0xFFFF5252), width: 1.2),
                     backgroundColor: const Color(0xFF1E1E1E),
-                    padding: EdgeInsets.symmetric(horizontal: isDesktop ? 16 : 12, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: isDesktop ? 18 : 12, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  icon: const Icon(Icons.person_outline, size: 18, color: Color(0xFFFF5252)),
+                  icon: const Icon(Icons.login, size: 16, color: Color(0xFFFF5252)),
                   label: Text(
-                    isDesktop ? 'Já sou cliente' : 'Entrar',
+                    isDesktop ? 'Área do Cliente' : 'Login',
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                   onPressed: _irParaLogin,
@@ -145,7 +147,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
 
                 const SizedBox(width: 10),
 
-                // Botão WhatsApp no Topo
+                // Botão Falar no Zap
                 if (!isTablet && !isDesktop)
                   IconButton(
                     icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
@@ -163,10 +165,10 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                     ),
                     icon: const Icon(Icons.chat, size: 18),
                     label: const Text(
-                      'Falar com Consultor',
+                      'Falar no WhatsApp',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
-                    onPressed: () => _abrirWhatsApp('Olá! Quero falar com um consultor da Target Rastreamento.'),
+                    onPressed: () => _abrirWhatsApp('Olá! Quero falar com um especialista sobre o rastreamento da Target.'),
                   ),
               ],
             ),
@@ -176,16 +178,19 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           SliverToBoxAdapter(
             child: Column(
               children: [
-                // HERO SECTION
+                // HERO SECTION (Inspirado no Shield Track & Trackplus)
                 _buildHeroSection(isDesktop, isTablet),
+
+                // BARRA DE CATEGORIAS RÁPIDAS (Carros, Motos, Lanchas, etc.)
+                _buildCategoriasBar(isDesktop),
 
                 // TRUST BAR (MÉTRICAS & DESTAQUES)
                 _buildTrustBar(isDesktop),
 
-                // SEÇÃO: IDEAL PARA (SEGMENTOS)
+                // SEÇÃO: COMO FUNCIONA & SHOWCASE INTERATIVO
                 Container(
-                  key: _sobreKey,
-                  child: _buildSecaoIdealPara(isDesktop),
+                  key: _comoFuncionaKey,
+                  child: _buildSecaoComoFunciona(isDesktop),
                 ),
 
                 // SEÇÃO: PRINCIPAIS RECURSOS
@@ -198,6 +203,12 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                 Container(
                   key: _planosKey,
                   child: _buildSecaoPlanos(isDesktop),
+                ),
+
+                // SEÇÃO: FAQ (DÚVIDAS FREQUENTES)
+                Container(
+                  key: _faqKey,
+                  child: _buildSecaoFaq(isDesktop),
                 ),
 
                 // SEÇÃO: CTA FINAL
@@ -213,407 +224,211 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  // --- 1. HERO SECTION (BANNER PRINCIPAL COM TEXTO E SHOWCASE 3D/MOCKUP) ---
+  // --- 1. HERO SECTION (BANNER TECNOLÓGICO) ---
   Widget _buildHeroSection(bool isDesktop, bool isTablet) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: isDesktop ? 60 : 20,
-        vertical: isDesktop ? 60 : 40,
+        vertical: isDesktop ? 70 : 45,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xFF121212),
-        // Brilho tecnológico sutil de fundo
+        color: Color(0xFF0F1216),
+        // Efeito de iluminação suave azul/vermelho tecnológico
         gradient: RadialGradient(
-          center: Alignment(0.6, -0.4),
-          radius: 1.2,
+          center: Alignment(0.3, -0.6),
+          radius: 1.3,
           colors: [
-            Color(0x1FFF5252), // Vermelho Target suave
-            Color(0xFF121212),
+            Color(0x28FF5252), // Vermelho Target luminoso
+            Color(0xFF0F1216),
           ],
         ),
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1240),
-          child: isDesktop
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Coluna da Esquerda: Textos & CTAs
-                    Expanded(flex: 6, child: _buildHeroTextos(isDesktop)),
-                    const SizedBox(width: 48),
-                    // Coluna da Direita: Mockup do App & Rastreador
-                    Expanded(flex: 5, child: _buildHeroShowcase()),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildHeroTextos(isDesktop),
-                    const SizedBox(height: 40),
-                    _buildHeroShowcase(),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroTextos(bool isDesktop) {
-    return Column(
-      crossAxisAlignment: isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-      children: [
-        // Pill Indicadora "Rastreador Online 4G"
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF333333)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Badge Tecnológica Superior (Estilo Shield Track)
               Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF00E676),
-                  shape: BoxShape.circle,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E242E).withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF2C3E50)),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'RASTREAMENTO 4G EM TEMPO REAL',
-                style: TextStyle(
-                  color: Color(0xFF9E9E9E),
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Título Principal
-        RichText(
-          textAlign: isDesktop ? TextAlign.start : TextAlign.center,
-          text: const TextSpan(
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 40,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              height: 1.15,
-            ),
-            children: [
-              TextSpan(text: 'Rastreamento\nVeicular 4G para '),
-              TextSpan(
-                text: 'carro,\nmoto e frota',
-                style: TextStyle(color: Color(0xFFFF5252)), // Vermelho Target
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-
-        // Subtítulo
-        Text(
-          'Monitore seu veículo 24 horas por dia pelo computador ou celular, receba alertas imediatos de ignição, consulte histórico de trajetos e tenha bloqueio remoto instantâneo.',
-          textAlign: isDesktop ? TextAlign.start : TextAlign.center,
-          style: const TextStyle(
-            color: Color(0xFF9E9E9E),
-            fontSize: 15,
-            height: 1.5,
-          ),
-        ),
-        const SizedBox(height: 32),
-
-        // Botões de Ação
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: isDesktop ? WrapAlignment.start : WrapAlignment.center,
-          children: [
-            // Botão Contratar / WhatsApp
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF5252),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 4,
-              ),
-              icon: const Icon(Icons.shopping_cart_outlined, size: 20),
-              label: const Text(
-                'Contratar serviços',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-              ),
-              onPressed: () => _abrirWhatsApp('Olá! Gostaria de contratar o serviço de rastreamento da Target para meu veículo.'),
-            ),
-
-            // Botão WhatsApp Direto
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF25D366),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 4,
-              ),
-              icon: const Icon(Icons.chat, size: 20),
-              label: const Text(
-                'Falar no WhatsApp',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-              ),
-              onPressed: () => _abrirWhatsApp('Olá! Gostaria de tirar dúvidas com o suporte da Target Rastreamento.'),
-            ),
-
-            // Botão Já sou cliente
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Color(0xFF424242), width: 1.5),
-                backgroundColor: const Color(0xFF1E1E1E),
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              icon: const Icon(Icons.login, size: 20, color: Color(0xFFFF5252)),
-              label: const Text(
-                'Já sou cliente',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-              ),
-              onPressed: _irParaLogin,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // --- SHOWCASE INTERATIVO (MOCKUP DO SMARTPHONE & RASTREADOR 4G) ---
-  Widget _buildHeroShowcase() {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 420),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFF333333), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFFF5252).withValues(alpha: 0.15),
-              blurRadius: 30,
-              spreadRadius: 2,
-            ),
-            const BoxShadow(
-              color: Colors.black87,
-              blurRadius: 20,
-              offset: Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Topo do Mockup (Status Bar estilizado)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Row(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.radar, color: Color(0xFFFF5252), size: 18),
-                    SizedBox(width: 6),
-                    Text(
-                      'TARGET LIVE',
-                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFB300), // Ponto âmbar brilhante
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Color(0xFFFFB300), blurRadius: 6, spreadRadius: 1),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Tecnologia de Ponta em Rastreamento',
+                      style: TextStyle(
+                        color: Color(0xFFB0BEC5),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF00E676).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
+              ),
+              const SizedBox(height: 24),
+
+              // Headline de Alto Impacto
+              RichText(
+                textAlign: TextAlign.center,
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 44,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    height: 1.15,
+                    letterSpacing: -0.5,
                   ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.circle, color: Color(0xFF00E676), size: 6),
-                      SizedBox(width: 4),
-                      Text('ONLINE', style: TextStyle(color: Color(0xFF00E676), fontSize: 9.5, fontWeight: FontWeight.bold)),
-                    ],
+                  children: [
+                    TextSpan(text: 'Segurança e\nMonitoramento '),
+                    TextSpan(
+                      text: 'em\nTempo Real',
+                      style: TextStyle(
+                        color: Color(0xFFFF5252), // Vermelho Target Vibrante
+                        shadows: [
+                          Shadow(color: Color(0x66FF5252), blurRadius: 20),
+                        ],
+                      ),
+                    ),
+                    TextSpan(text: ' para seu\nVeículo ou Embarcação'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Subtítulo
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: const Text(
+                  'Rastreamento veicular e náutico via satélite, com acesso 24h pelo celular ou computador. Tenha tranquilidade onde quer que você esteja.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF9E9E9E),
+                    fontSize: 16,
+                    height: 1.5,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // Mini Card do Carro com Placa Mercosul
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF121212),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF2C2C2C)),
               ),
-              child: Row(
+              const SizedBox(height: 36),
+
+              // Dois Botões Centrais (Conforme o Shield Track)
+              Wrap(
+                spacing: 16,
+                runSpacing: 14,
+                alignment: WrapAlignment.center,
                 children: [
-                  const MercosulPlate(
-                    plate: 'MQA6E92',
-                    width: 95,
-                    height: 34,
-                    fontSize: 13,
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Carro de Mamãe',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Rio das Ostras - RJ',
-                          style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 11),
-                        ),
-                      ],
+                  // Botão Primário: Falar com um Especialista (WhatsApp)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF5252), // Vermelho Target
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 6,
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E88E5).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(4),
+                    icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                    label: const Text(
+                      'Falar com um Especialista',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                     ),
-                    child: const Text('Parking', style: TextStyle(color: Color(0xFF64B5F6), fontSize: 10, fontWeight: FontWeight.bold)),
+                    onPressed: () => _abrirWhatsApp('Olá! Gostaria de falar com um especialista sobre o rastreamento da Target.'),
+                  ),
+
+                  // Botão Secundário: Como Funciona
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xFF333333), width: 1.5),
+                      backgroundColor: const Color(0xFF161B22),
+                      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.play_circle_outline, size: 20, color: Color(0xFFFF5252)),
+                    label: const Text(
+                      'Como Funciona',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () => _rolarParaSecao(_comoFuncionaKey),
+                  ),
+
+                  // Botão Área do Cliente
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xFF2C2C2C), width: 1.2),
+                      backgroundColor: const Color(0xFF1E1E1E),
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.person_outline, size: 20, color: Color(0xFF9E9E9E)),
+                    label: const Text(
+                      'Área do Cliente',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: _irParaLogin,
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // Simulação de Mapa com Radar Tecnológico
-            Container(
-              height: 160,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0D1117),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF21262D)),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Grade de linhas do mapa
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _GridMapPainter(),
-                    ),
-                  ),
-                  // Ponto central de localização do carro com pulso
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF5252).withValues(alpha: 0.25),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFF5252),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.directions_car, color: Colors.white, size: 18),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.black87,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '-22.504771, -41.920289',
-                          style: TextStyle(color: Colors.white70, fontSize: 9, fontFamily: 'monospace'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Métricas Rápidas
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMiniMetrica(Icons.speed, '0 km/h', 'Velocidade'),
-                _buildMiniMetrica(Icons.satellite_alt, '15', 'Satélites'),
-                _buildMiniMetrica(Icons.route, '25,61 km', 'Odômetro'),
-                _buildMiniMetrica(Icons.battery_charging_full, '6%', 'Bateria'),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMiniMetrica(IconData icon, String valor, String rotulo) {
-    return Column(
-      children: [
-        Icon(icon, size: 16, color: const Color(0xFFFF5252)),
-        const SizedBox(height: 2),
-        Text(valor, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-        Text(rotulo, style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 9.5)),
-      ],
-    );
-  }
-
-  // --- 2. TRUST BAR (MÉTRICAS & DESTAQUES) ---
-  Widget _buildTrustBar(bool isDesktop) {
-    final itens = [
-      {'icon': Icons.verified_user_outlined, 'texto': '+5.000 veículos monitorados'},
-      {'icon': Icons.cell_tower, 'texto': 'Tecnologia 4G Multi-Operadora'},
-      {'icon': Icons.devices, 'texto': 'App Android, iOS & Web'},
-      {'icon': Icons.lock_outline, 'texto': 'Bloqueio remoto do motor'},
-      {'icon': Icons.history, 'texto': 'Histórico de rotas 24/7'},
-      {'icon': Icons.support_agent, 'texto': 'Suporte técnico humanizado'},
+  // --- 2. BARRA DE CATEGORIAS RÁPIDAS (Estilo Shield Track) ---
+  Widget _buildCategoriasBar(bool isDesktop) {
+    final categorias = [
+      {'icon': Icons.directions_car, 'nome': 'Carros'},
+      {'icon': Icons.two_wheeler, 'nome': 'Motos'},
+      {'icon': Icons.agriculture, 'nome': 'Quadriciclos'},
+      {'icon': Icons.directions_boat, 'nome': 'Lanchas'},
+      {'icon': Icons.waves, 'nome': 'Jet Skis'},
+      {'icon': Icons.local_shipping, 'nome': 'Caminhões e Frotas'},
     ];
 
     return Container(
       width: double.infinity,
-      color: const Color(0xFF181818),
-      padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20),
+      color: const Color(0xFF0C0F13),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1240),
+          constraints: const BoxConstraints(maxWidth: 1100),
           child: Wrap(
-            spacing: isDesktop ? 36 : 18,
+            spacing: isDesktop ? 40 : 20,
             runSpacing: 14,
             alignment: WrapAlignment.center,
-            children: itens.map((item) {
+            children: categorias.map((c) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(item['icon'] as IconData, color: const Color(0xFFFF5252), size: 18),
+                  Icon(c['icon'] as IconData, color: const Color(0xFFFF5252), size: 19),
                   const SizedBox(width: 8),
                   Text(
-                    item['texto'] as String,
+                    c['nome'] as String,
                     style: const TextStyle(
-                      color: Color(0xFFCCCCCC),
-                      fontSize: 12.5,
+                      color: Color(0xFFB0BEC5),
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -626,41 +441,53 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  // --- 3. SEÇÃO: IDEAL PARA (SEGMENTOS) ---
-  Widget _buildSecaoIdealPara(bool isDesktop) {
-    final segmentos = [
-      {
-        'icon': Icons.directions_car,
-        'titulo': 'Carros particulares',
-        'desc': 'Mais controle, tranquilidade e segurança para você e sua família no dia a dia.',
-      },
-      {
-        'icon': Icons.two_wheeler,
-        'titulo': 'Motos',
-        'desc': 'Rastreamento compacto e discreto com proteção antifurto de rápida recuperação.',
-      },
-      {
-        'icon': Icons.local_shipping,
-        'titulo': 'Caminhões e Vans',
-        'desc': 'Mais visibilidade para rotas, paradas, logística e entregas com pontualidade.',
-      },
-      {
-        'icon': Icons.apartment,
-        'titulo': 'Frotas empresariais',
-        'desc': 'Gestão de múltiplos veículos em uma só tela, redução de custos e telemetria.',
-      },
-      {
-        'icon': Icons.agriculture,
-        'titulo': 'Máquinas e equipamentos',
-        'desc': 'Acompanhamento de ativos pesados, controle de horímetro e proteção patrimonial.',
-      },
-      {
-        'icon': Icons.storefront,
-        'titulo': 'Empresas e revendedores',
-        'desc': 'Soluções completas para operação, instalação homologada e revenda autorizada.',
-      },
+  // --- 3. TRUST BAR (MÉTRICAS & CONFIANÇA) ---
+  Widget _buildTrustBar(bool isDesktop) {
+    final itens = [
+      {'icon': Icons.verified_user_outlined, 'texto': '+5.000 veículos monitorados'},
+      {'icon': Icons.cell_tower, 'texto': 'Tecnologia 4G Multi-Operadora'},
+      {'icon': Icons.devices, 'texto': 'Acesso Web, Android e iPhone'},
+      {'icon': Icons.lock_outline, 'texto': 'Bloqueio remoto antifurto'},
+      {'icon': Icons.history, 'texto': 'Histórico de rotas 24/7'},
+      {'icon': Icons.support_agent, 'texto': 'Suporte via WhatsApp (22) 99769-4019'},
     ];
 
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF14181F),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: Wrap(
+            spacing: isDesktop ? 32 : 16,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: itens.map((item) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(item['icon'] as IconData, color: const Color(0xFFFF5252), size: 17),
+                  const SizedBox(width: 8),
+                  Text(
+                    item['texto'] as String,
+                    style: const TextStyle(
+                      color: Color(0xFFCCCCCC),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- 4. SEÇÃO: COMO FUNCIONA & SHOWCASE INTERATIVO ---
+  Widget _buildSecaoComoFunciona(bool isDesktop) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isDesktop ? 60 : 20, vertical: 70),
       child: Center(
@@ -670,7 +497,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'VERSÁTIL',
+                'COMO FUNCIONA',
                 style: TextStyle(
                   color: Color(0xFFFF5252),
                   fontSize: 12,
@@ -680,75 +507,32 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Ideal para',
+                'Simples, Rápido e Seguro',
                 style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 6),
               const Text(
-                'Soluções de rastreamento inteligente para todo tipo de veículo e operação.',
+                'Veja como funciona o monitoramento em tempo real da Target.',
                 style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
               ),
               const SizedBox(height: 36),
 
-              // Grid de Cards
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final colunas = isDesktop ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: colunas,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: isDesktop ? 2.4 : 2.2,
+              isDesktop
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(child: _buildPassosFuncionamento()),
+                        const SizedBox(width: 40),
+                        Expanded(child: _buildMockupVisual()),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _buildPassosFuncionamento(),
+                        const SizedBox(height: 36),
+                        _buildMockupVisual(),
+                      ],
                     ),
-                    itemCount: segmentos.length,
-                    itemBuilder: (context, index) {
-                      final item = segmentos[index];
-                      return Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF2C2C2C)),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF5252).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(item['icon'] as IconData, color: const Color(0xFFFF5252), size: 24),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    item['titulo'] as String,
-                                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item['desc'] as String,
-                                    style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 12, height: 1.3),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
             ],
           ),
         ),
@@ -756,22 +540,189 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  // --- 4. SEÇÃO: PRINCIPAIS RECURSOS (TECNOLOGIA) ---
+  Widget _buildPassosFuncionamento() {
+    final passos = [
+      {
+        'num': '01',
+        'titulo': 'Instalação Rápida e Discreta',
+        'desc': 'Rastreador ultracompacto 4G instalado em local seguro do veículo ou embarcação com consumo mínimo de bateria.',
+      },
+      {
+        'num': '02',
+        'titulo': 'Transmissão em Tempo Real',
+        'desc': 'O dispositivo envia coordenadas métricas, velocidade, ignição e satélites a cada segundo para nossos servidores Pilot GPS.',
+      },
+      {
+        'num': '03',
+        'titulo': 'Acesso Total pelo Celular ou PC',
+        'desc': 'Você acompanha a rota ao vivo, recebe alertas no WhatsApp e pode enviar comandos de bloqueio remoto a qualquer momento.',
+      },
+    ];
+
+    return Column(
+      children: passos.map((p) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFF5252)),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  p['num']!,
+                  style: const TextStyle(
+                    color: Color(0xFFFF5252),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p['titulo']!,
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      p['desc']!,
+                      style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildMockupVisual() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 420),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFF333333)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black54, blurRadius: 20, offset: Offset(0, 8)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.radar, color: Color(0xFFFF5252), size: 18),
+                  SizedBox(width: 6),
+                  Text('MONITORAMENTO ATIVO', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00E676).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.circle, color: Color(0xFF00E676), size: 6),
+                    SizedBox(width: 4),
+                    Text('AO VIVO', style: TextStyle(color: Color(0xFF00E676), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF121212),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF2C2C2C)),
+            ),
+            child: const Row(
+              children: [
+                MercosulPlate(plate: 'MQA6E92', width: 95, height: 34, fontSize: 13),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Carro de Mamãe', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                      Text('Rio das Ostras - RJ', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Container(
+            height: 150,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D1117),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF21262D)),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned.fill(child: CustomPaint(painter: _GridMapPainter())),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(color: Color(0xFFFF5252), shape: BoxShape.circle),
+                      child: const Icon(Icons.directions_car, color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text('-22.504771, -41.920289', style: TextStyle(color: Colors.white70, fontSize: 9.5, fontFamily: 'monospace')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 5. SEÇÃO: PRINCIPAIS RECURSOS ---
   Widget _buildSecaoRecursos(bool isDesktop) {
     final recursos = [
-      {'icon': Icons.location_on_outlined, 'titulo': 'Localização em tempo real'},
-      {'icon': Icons.history, 'titulo': 'Histórico de rotas detalhado'},
-      {'icon': Icons.lock_outline, 'titulo': 'Bloqueio remoto do motor'},
-      {'icon': Icons.notifications_active_outlined, 'titulo': 'Alertas no celular e WhatsApp'},
-      {'icon': Icons.fence_outlined, 'titulo': 'Cerca virtual inteligente'},
-      {'icon': Icons.description_outlined, 'titulo': 'Relatórios de telemetria'},
-      {'icon': Icons.phone_android, 'titulo': 'App Android, iOS e Web'},
-      {'icon': Icons.headset_mic_outlined, 'titulo': 'Suporte técnico ágil'},
+      {'icon': Icons.location_on_outlined, 'titulo': 'Localização em tempo real', 'desc': 'Precisão métrica com atualização rápida.'},
+      {'icon': Icons.history, 'titulo': 'Histórico de rotas', 'desc': 'Consulte trajetos, paradas e velocidades.'},
+      {'icon': Icons.lock_outline, 'titulo': 'Bloqueio remoto', 'desc': 'Corte da ignição pelo celular em segundos.'},
+      {'icon': Icons.notifications_active_outlined, 'titulo': 'Alertas no app e WhatsApp', 'desc': 'Avisos imediatos de ignição ligada e cerca.'},
+      {'icon': Icons.fence_outlined, 'titulo': 'Cerca virtual inteligente', 'desc': 'Defina áreas seguras e receba notificações.'},
+      {'icon': Icons.description_outlined, 'titulo': 'Relatórios completos', 'desc': 'Quilometragem, horímetro e telemetria.'},
+      {'icon': Icons.phone_android, 'titulo': 'App Android, iOS e Web', 'desc': 'Acesse de qualquer smartphone ou computador.'},
+      {'icon': Icons.headset_mic_outlined, 'titulo': 'Suporte 24h especializado', 'desc': 'Atendimento rápido e direto no WhatsApp.'},
     ];
 
     return Container(
       width: double.infinity,
-      color: const Color(0xFF161616),
+      color: const Color(0xFF14181F),
       padding: EdgeInsets.symmetric(horizontal: isDesktop ? 60 : 20, vertical: 70),
       child: Center(
         child: ConstrainedBox(
@@ -795,15 +746,14 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Tudo o que você precisa para acompanhar, proteger e gerenciar seu patrimônio.',
+                'Tudo o que você precisa para acompanhar e proteger seu patrimônio.',
                 style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
               ),
               const SizedBox(height: 36),
 
-              // Grid de Recursos
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final colunas = isDesktop ? 4 : (constraints.maxWidth > 600 ? 2 : 1);
+                  final colunas = isDesktop ? 4 : (constraints.maxWidth > 650 ? 2 : 1);
                   return GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -811,37 +761,45 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                       crossAxisCount: colunas,
                       crossAxisSpacing: 14,
                       mainAxisSpacing: 14,
-                      childAspectRatio: isDesktop ? 2.6 : 3.0,
+                      childAspectRatio: isDesktop ? 2.1 : 2.5,
                     ),
                     itemCount: recursos.length,
                     itemBuilder: (context, index) {
                       final item = recursos[index];
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E1E1E),
+                          color: const Color(0xFF1E222A),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFF2C2C2C)),
+                          border: Border.all(color: const Color(0xFF2C323D)),
                         ),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF5252).withValues(alpha: 0.12),
+                                color: const Color(0xFFFF5252).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(item['icon'] as IconData, color: const Color(0xFFFF5252), size: 20),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
-                                item['titulo'] as String,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    item['titulo'] as String,
+                                    style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    item['desc'] as String,
+                                    style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 11.5, height: 1.3),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -858,7 +816,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  // --- 5. SEÇÃO: PLANOS & PREÇOS (CONFORME OS SCREENSHOTS) ---
+  // --- 6. SEÇÃO: PLANOS & PREÇOS (COM NÚMERO OFICIAL DO WHATSAPP) ---
   Widget _buildSecaoPlanos(bool isDesktop) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isDesktop ? 60 : 20, vertical: 80),
@@ -884,12 +842,11 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Temos opções para uso pessoal, empresas e frotas. Fale com nossa equipe e escolha o plano ideal.',
+                'Opções para uso pessoal, embarcações e frotas corporativas. Fale com a gente pelo WhatsApp (22) 99769-4019.',
                 style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
               ),
               const SizedBox(height: 44),
 
-              // Grade de 4 Planos
               LayoutBuilder(
                 builder: (context, constraints) {
                   final colunas = isDesktop ? 4 : (constraints.maxWidth > 700 ? 2 : 1);
@@ -901,7 +858,6 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                     mainAxisSpacing: 20,
                     childAspectRatio: isDesktop ? 0.65 : 0.85,
                     children: [
-                      // 1. Essencial
                       _buildCardPlano(
                         categoria: 'PARA USO PESSOAL',
                         titulo: 'Essencial',
@@ -915,29 +871,25 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                           'App Android, iOS e Web',
                         ],
                         textoBotao: 'Consultar mensalidade',
-                        onTap: () => _abrirWhatsApp('Olá! Gostaria de saber mais sobre o Plano Essencial da Target (R\$ 37/mês).'),
+                        onTap: () => _abrirWhatsApp('Olá! Gostaria de consultar o Plano Essencial da Target (R\$ 37/mês).'),
                       ),
-
-                      // 2. Pro (Mais Popular)
                       _buildCardPlano(
                         categoria: 'MAIS POPULAR',
                         titulo: 'Pro',
                         preco: 'A partir de R\$ 42,00/mês',
-                        subpreco: 'Mais recursos para quem quer controle completo',
+                        subpreco: 'Mais recursos para controle total',
                         destaque: true,
                         badgeDestaque: 'MAIS POPULAR',
                         beneficios: [
                           'Tudo do Plano Essencial',
                           'Acesso à plataforma Target PRO',
                           'Relatórios avançados',
-                          'Gestão de veículos',
+                          'Gestão de múltiplos veículos',
                           'Ideal para uso comercial',
                         ],
                         textoBotao: 'Contratar plano Pro',
-                        onTap: () => _abrirWhatsApp('Olá! Quero contratar o Plano Pro da Target (R\$ 42,00/mês).'),
+                        onTap: () => _abrirWhatsApp('Olá! Gostaria de contratar o Plano Pro da Target (R\$ 42,00/mês).'),
                       ),
-
-                      // 3. Flex (Parcelado)
                       _buildCardPlano(
                         categoria: 'PARCELADO',
                         titulo: 'Flex',
@@ -945,31 +897,29 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         subpreco: 'Sem taxa de adesão — rastreador incluso',
                         destaque: false,
                         beneficios: [
-                          'Rastreador incluso no plano',
+                          'Rastreador 4G incluso',
                           'Aplicativo Android, iOS e Web',
                           'Bloqueador remoto incluso',
                           'Instalação por conta do cliente',
                           'Contrato mínimo de 12 meses',
                         ],
                         textoBotao: 'Contratar plano Flex',
-                        onTap: () => _abrirWhatsApp('Olá! Tenho interesse no Plano Flex com rastreador incluso (R\$ 59,90/mês).'),
+                        onTap: () => _abrirWhatsApp('Olá! Gostaria de contratar o Plano Flex com rastreador incluso (R\$ 59,90/mês).'),
                       ),
-
-                      // 4. Frotas
                       _buildCardPlano(
-                        categoria: 'EMPRESARIAL',
-                        titulo: 'Frotas',
+                        categoria: 'EMPRESARIAL & NÁUTICO',
+                        titulo: 'Frotas & Barcos',
                         preco: 'Condições especiais',
-                        subpreco: 'Solução corporativa sob medida',
+                        subpreco: 'Solução sob medida para empresas',
                         destaque: false,
                         beneficios: [
-                          'Gestão completa de múltiplos carros',
+                          'Gestão completa de frota',
+                          'Monitoramento de embarcações',
                           'Relatórios gerenciais customizados',
-                          'Controle de velocidade e percurso',
-                          'Atendimento comercial exclusivo',
+                          'Atendimento exclusivo via WhatsApp',
                         ],
-                        textoBotao: 'Solicitar proposta para frota',
-                        onTap: () => _abrirWhatsApp('Olá! Gostaria de uma proposta corporativa para frota de veículos com a Target.'),
+                        textoBotao: 'Solicitar proposta comercial',
+                        onTap: () => _abrirWhatsApp('Olá! Gostaria de uma proposta corporativa para frota/embarcação com a Target.'),
                       ),
                     ],
                   );
@@ -1014,7 +964,6 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Badge Superior (Mais Popular)
           if (badgeDestaque != null)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -1025,16 +974,10 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               child: Center(
                 child: Text(
                   badgeDestaque,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 1.2),
                 ),
               ),
             ),
-
           Padding(
             padding: const EdgeInsets.all(22),
             child: Column(
@@ -1042,35 +985,18 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               children: [
                 Text(
                   categoria,
-                  style: const TextStyle(
-                    color: Color(0xFF9E9E9E),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
+                  style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 10.5, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  titulo,
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
-                ),
+                Text(titulo, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 8),
                 Text(
                   preco,
-                  style: TextStyle(
-                    color: destaque ? const Color(0xFFFF5252) : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: destaque ? const Color(0xFFFF5252) : Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subpreco,
-                  style: const TextStyle(color: Color(0xFF757575), fontSize: 11),
-                ),
+                Text(subpreco, style: const TextStyle(color: Color(0xFF757575), fontSize: 11)),
                 const Divider(color: Color(0xFF2C2C2C), height: 28),
-
-                // Lista de Benefícios
                 ...beneficios.map((b) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
@@ -1079,12 +1005,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                       children: [
                         const Icon(Icons.check, color: Color(0xFFFF5252), size: 16),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            b,
-                            style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 12.5),
-                          ),
-                        ),
+                        Expanded(child: Text(b, style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 12.5))),
                       ],
                     ),
                   );
@@ -1093,8 +1014,6 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
             ),
           ),
           const Spacer(),
-
-          // Botão do Card
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             child: SizedBox(
@@ -1108,10 +1027,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: onTap,
-                child: Text(
-                  textoBotao,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-                ),
+                child: Text(textoBotao, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
               ),
             ),
           ),
@@ -1120,27 +1036,109 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  // --- 6. SEÇÃO: CTA FINAL ---
+  // --- 7. SEÇÃO: FAQ (DÚVIDAS FREQUENTES) ---
+  Widget _buildSecaoFaq(bool isDesktop) {
+    final perguntas = [
+      {
+        'p': 'Como funciona a contratação do serviço?',
+        'r': 'Basta clicar no botão do WhatsApp e falar diretamente com nossa equipe pelo (22) 99769-4019. Agendamos a instalação ou enviamos o rastreador já configurado para o seu endereço.',
+      },
+      {
+        'p': 'O rastreador descarrega a bateria do meu veículo ou barco?',
+        'r': 'Não! Nossos equipamentos possuem tecnologia inteligente de baixo consumo e bateria interna de backup, entrando em modo sleep quando a ignição está desligada.',
+      },
+      {
+        'p': 'Posso acompanhar pelo computador e pelo celular ao mesmo tempo?',
+        'r': 'Sim! A Target disponibiliza acesso ilimitado via Web para computadores e aplicativo compatível com Android e iOS.',
+      },
+      {
+        'p': 'O bloqueio do motor realmente funciona?',
+        'r': 'Sim. O corte da ignição é acionado remotamente pelo aplicativo ou central com total segurança na próxima desaceleração do veículo.',
+      },
+    ];
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF14181F),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 60 : 20, vertical: 70),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 880),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'DÚVIDAS FREQUENTES',
+                style: TextStyle(
+                  color: Color(0xFFFF5252),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Perguntas Frequentes (FAQ)',
+                style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 28),
+              ...perguntas.map((item) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E222A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF2C323D)),
+                  ),
+                  child: ExpansionTile(
+                    shape: const Border(),
+                    collapsedShape: const Border(),
+                    iconColor: const Color(0xFFFF5252),
+                    collapsedIconColor: const Color(0xFF9E9E9E),
+                    title: Text(
+                      item['p']!,
+                      style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Text(
+                          item['r']!,
+                          style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- 8. SEÇÃO: CTA FINAL ---
   Widget _buildSecaoCtaFinal() {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF181818),
+      color: const Color(0xFF0F1216),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
           child: Column(
             children: [
-              const Icon(Icons.security, color: Color(0xFFFF5252), size: 44),
+              const Icon(Icons.shield_outlined, color: Color(0xFFFF5252), size: 44),
               const SizedBox(height: 16),
               const Text(
-                'Pronto para proteger o seu patrimônio?',
+                'Proteja seu veículo ou embarcação hoje mesmo',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 10),
               const Text(
-                'Fale com nossos especialistas agora mesmo no WhatsApp ou entre na sua conta para gerenciar seus veículos.',
+                'Fale com nossos especialistas agora pelo WhatsApp (22) 99769-4019 e ative sua segurança 24h.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
               ),
@@ -1158,8 +1156,8 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     icon: const Icon(Icons.chat, size: 20),
-                    label: const Text('Falar no WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onPressed: () => _abrirWhatsApp(),
+                    label: const Text('Falar no WhatsApp: (22) 99769-4019', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () => _abrirWhatsApp('Olá! Gostaria de contratar a proteção veicular da Target.'),
                   ),
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
@@ -1169,7 +1167,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     icon: const Icon(Icons.login, size: 20, color: Color(0xFFFF5252)),
-                    label: const Text('Acessar Área do Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: const Text('Área do Cliente (Login)', style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: _irParaLogin,
                   ),
                 ],
@@ -1181,11 +1179,11 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  // --- 7. FOOTER INSTITUCIONAL ---
+  // --- 9. FOOTER INSTITUCIONAL ---
   Widget _buildFooter() {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF101010),
+      color: const Color(0xFF0A0D10),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
       child: Center(
         child: ConstrainedBox(
@@ -1193,13 +1191,13 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           child: Column(
             children: [
               const TargetLogo(iconSize: 40),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               const Text(
-                'Target Rastreamento Veicular • Tecnologia, Precisão e Monitoramento 24h',
+                'Target Rastreamento Veicular & Náutico • WhatsApp: (22) 99769-4019',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF757575), fontSize: 12),
+                style: TextStyle(color: Color(0xFFB0BEC5), fontSize: 12.5, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               const Text(
                 '© 2026 Target Rastreamento. Todos os direitos reservados.',
                 style: TextStyle(color: Color(0xFF555555), fontSize: 11),
@@ -1229,7 +1227,6 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
   }
 }
 
-// Painter para grade tecnológica de fundo do mapa
 class _GridMapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -1249,4 +1246,3 @@ class _GridMapPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
