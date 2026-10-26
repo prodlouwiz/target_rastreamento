@@ -24,6 +24,9 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   final GlobalKey _cercasKey = GlobalKey();
   final GlobalKey _relatoriosKey = GlobalKey();
   final GlobalKey _simuladorKey = GlobalKey();
+  final GlobalKey _coberturaKey = GlobalKey();
+  final GlobalKey _comoFuncionaKey = GlobalKey();
+  final GlobalKey _comparativoKey = GlobalKey();
   final GlobalKey _faqKey = GlobalKey();
 
   // WhatsApp oficial da Target
@@ -313,12 +316,14 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                               curve: Curves.easeInOut)),
                       _buildNavLink('Demonstração',
                           () => _rolarParaSecao(_simuladorKey)),
+                      _buildNavLink('Cobertura 4G/5G',
+                          () => _rolarParaSecao(_coberturaKey)),
+                      _buildNavLink('Como Funciona',
+                          () => _rolarParaSecao(_comoFuncionaKey)),
                       _buildNavLink(
-                          'Cercas Virtuais', () => _rolarParaSecao(_cercasKey)),
-                      _buildNavLink(
-                          'Relatórios', () => _rolarParaSecao(_relatoriosKey)),
-                      _buildNavLink('Recursos',
-                          () => _rolarParaSecao(_recursosKey)),
+                          'Cercas & Rotas', () => _rolarParaSecao(_cercasKey)),
+                      _buildNavLink('Comparativo',
+                          () => _rolarParaSecao(_comparativoKey)),
                       _buildNavLink(
                           'Planos', () => _rolarParaSecao(_planosKey)),
                       _buildNavLink('FAQ', () => _rolarParaSecao(_faqKey)),
@@ -399,6 +404,18 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       child: _buildSecaoSimuladorInterativo(isDesktop),
                     ),
 
+                    // NOVA SEÇÃO: COBERTURA 4G/5G MULTI-OPERADORA
+                    Container(
+                      key: _coberturaKey,
+                      child: _buildSecaoCobertura4G5G(isDesktop),
+                    ),
+
+                    // NOVA SEÇÃO: COMO FUNCIONA (3 PASSOS)
+                    Container(
+                      key: _comoFuncionaKey,
+                      child: _buildSecaoComoFunciona(isDesktop),
+                    ),
+
                     // SEÇÃO DE DESTAQUE: CERCAS VIRTUAIS
                     Container(
                       key: _cercasKey,
@@ -409,6 +426,12 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     Container(
                       key: _relatoriosKey,
                       child: _buildSecaoRelatorios(isDesktop),
+                    ),
+
+                    // NOVA SEÇÃO: COMPARATIVO TARGET 4G vs RASTREADOR 2G
+                    Container(
+                      key: _comparativoKey,
+                      child: _buildSecaoComparativo(isDesktop),
                     ),
 
                     // SELOS DE TECNOLOGIA E HOMOLOGAÇÃO
@@ -528,7 +551,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         ),
                         const SizedBox(width: 8),
                         const Text(
-                          'Tecnologia de Ponta em Rastreamento 4G',
+                          'Tecnologia de Ponta 4G & 5G • Multi-Operadora (Vivo, Claro, TIM)',
                           style: TextStyle(
                             color: Color(0xFFB0BEC5),
                             fontSize: 12,
@@ -708,7 +731,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     final itens = [
       {
         'icon': Icons.cell_tower,
-        'texto': 'Cobertura 4G em Macaé, Rio das Ostras e Região'
+        'texto': 'Cobertura 4G & 5G com Roaming Triplo (Vivo, Claro e TIM)'
       },
       {'icon': Icons.fence_outlined, 'texto': 'Cercas Virtuais com Avisos no WhatsApp'},
       {'icon': Icons.description_outlined, 'texto': 'Relatórios de Km e Horímetro'},
@@ -2013,6 +2036,802 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               style: const TextStyle(
                   color: Color(0xFF9E9E9E), fontSize: 12.5, height: 1.35)),
         ],
+      ),
+    );
+  }
+
+  // --- NOVA SEÇÃO: COBERTURA 4G/5G & CONECTIVIDADE MULTI-OPERADORA ---
+  Widget _buildSecaoCobertura4G5G(bool isDesktop) {
+    final itensCobertura = [
+      {
+        'icone': Icons.cell_tower,
+        'titulo': 'Triplo Roaming Automático',
+        'subtitulo': 'Vivo • Claro • TIM',
+        'desc':
+            'O rastreador avalia a potência de sinal em tempo real. Se o veículo entrar em área com sinal fraco de uma operadora, o chip M2M salta instantaneamente para a rede concorrente mais forte.',
+        'tag': 'SEM PONTOS CEGOS',
+      },
+      {
+        'icone': Icons.speed,
+        'titulo': 'Tecnologia 4G LTE Cat-M1 & NB-IoT',
+        'subtitulo': 'Preparado para a Era 5G',
+        'desc':
+            'Frequências modernas de longo alcance com alto poder de penetração em subsolos, garagens subterrâneas e galpões. Totalmente imune ao desligamento das redes 2G/3G no Brasil.',
+        'tag': 'ALCANCE EXPANDIDO',
+      },
+      {
+        'icone': Icons.storage,
+        'titulo': 'Buffer Offline (Memória Interna)',
+        'subtitulo': 'Até 10.000 pontos salvos',
+        'desc':
+            'Passou por túneis, serras ou trechos sem sinal celular? O rastreador guarda todo o histórico de rota, velocidade e tempo de motor e descarrega tudo automaticamente no app ao reconectar.',
+        'tag': 'ANTI-APAGÃO',
+      },
+      {
+        'icone': Icons.security,
+        'titulo': 'Túnel Privado Seguro (APN Privada)',
+        'subtitulo': 'Criptografia de Nível Bancário',
+        'desc':
+            'Tráfego de telemetria isolado da internet pública. Seus dados trafegam por rota corporativa blindada com 99.98% de disponibilidade e proteção contra interceptação ou clonagem.',
+        'tag': 'BLINDAGEM DIGITAL',
+      },
+    ];
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF0B0E13),
+      padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 60 : 20, vertical: 80),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Badge de Topo
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                          color:
+                              const Color(0xFFFF5252).withValues(alpha: 0.4)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.wifi, color: Color(0xFFFF5252), size: 14),
+                        SizedBox(width: 6),
+                        Text(
+                          'CONECTIVIDADE M2M MULTI-OPERADORA',
+                          style: TextStyle(
+                            color: Color(0xFFFF5252),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Cobertura Nacional 4G & 5G sem Pontos Cegos',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Nosso chip M2M industrial conecta simultaneamente às maiores operadoras do país (Vivo, Claro e TIM), garantindo sinal constante do centro urbano às rodovias mais distantes.',
+                style: TextStyle(
+                  color: Color(0xFF9E9E9E),
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // BARRA DE STATUS DE REDE AO VIVO
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161B22),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF2C3E50)),
+                ),
+                child: Wrap(
+                  spacing: 20,
+                  runSpacing: 14,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  alignment: WrapAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF00E676),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFF00E676),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'REDE ATIVA: 4G LTE-M / NB-IoT • ROAMING NACIONAL • 99.98% DISPONIBILIDADE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Wrap(
+                      spacing: 10,
+                      children: [
+                        _buildOperadoraBadge('VIVO 4G/5G', const Color(0xFF660099)),
+                        _buildOperadoraBadge('CLARO 4G/5G', const Color(0xFFDA291C)),
+                        _buildOperadoraBadge('TIM 4G/5G', const Color(0xFF003399)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 36),
+
+              // GRID DE CARDS TECNOLÓGICOS (4 CARDS)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 800;
+                  if (isWide) {
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 18,
+                        mainAxisSpacing: 18,
+                        childAspectRatio: 2.1,
+                      ),
+                      itemCount: itensCobertura.length,
+                      itemBuilder: (context, index) {
+                        return _buildCardItemCobertura(itensCobertura[index]);
+                      },
+                    );
+                  } else {
+                    return Column(
+                      children: itensCobertura
+                          .map((item) => Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: _buildCardItemCobertura(item),
+                              ))
+                          .toList(),
+                    );
+                  }
+                },
+              ),
+
+              const SizedBox(height: 28),
+
+              // BANNER DE RODOVIAS REGIONAIS
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F141A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: const Color(0xFFFF5252).withValues(alpha: 0.25)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.alt_route, color: Color(0xFFFF5252), size: 24),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        '🛣️ Cobertura contínua e testada: BR-101, Rodovia Amaral Peixoto (RJ-106), Linha Verde, Trevo dos 40, Polo Offshore de Macaé, Zona Zen de Rio das Ostras e toda a Região dos Lagos.',
+                        style: TextStyle(
+                          color: Color(0xFFB0BEC5),
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardItemCobertura(Map<String, dynamic> item) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF263238)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  item['icone'] as IconData,
+                  color: const Color(0xFFFF5252),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['titulo'] as String,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item['subtitulo'] as String,
+                      style: const TextStyle(
+                        color: Color(0xFFFF8A80),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2C3E50).withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  item['tag'] as String,
+                  style: const TextStyle(
+                    color: Color(0xFF90CAF9),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            item['desc'] as String,
+            style: const TextStyle(
+              color: Color(0xFFCCCCCC),
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOperadoraBadge(String nome, Color cor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: cor.withValues(alpha: 0.6)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: cor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            nome,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- NOVA SEÇÃO: COMO FUNCIONA (PASSO A PASSO EM 3 ETAPAS) ---
+  Widget _buildSecaoComoFunciona(bool isDesktop) {
+    final passos = [
+      {
+        'numero': '01',
+        'icone': Icons.chat,
+        'corIcone': const Color(0xFF25D366),
+        'titulo': '1. Escolha o Plano & Fale no WhatsApp',
+        'desc':
+            'Toque em "Falar no WhatsApp" ou escolha seu plano (Próprio, Pro ou Flex). Nosso especialista atende você de forma ágil, esclarece todas as dúvidas e reserva seu rastreador.',
+      },
+      {
+        'numero': '02',
+        'icone': Icons.build_circle,
+        'corIcone': const Color(0xFFFF5252),
+        'titulo': '2. Instalação Técnica Sigilosa',
+        'desc':
+            'Nossa equipe técnica própria realiza a instalação de forma 100% oculta e segura no seu carro ou moto. Sem cortar chicotes originais, mantendo a garantia de fábrica do veículo.',
+      },
+      {
+        'numero': '03',
+        'icone': Icons.phone_android,
+        'corIcone': const Color(0xFF00E5FF),
+        'titulo': '3. Acesso Imediato ao App 24h',
+        'desc':
+            'Você recebe seu login e senha na hora. Basta baixar o app Target (Android e iOS) ou acessar via Web para ver seu veículo ao vivo, criar cercas e controlar o bloqueio remoto.',
+      },
+    ];
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF10141B),
+      padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 60 : 20, vertical: 80),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'PROCESSO SIMPLES & RÁPIDO',
+                style: TextStyle(
+                  color: Color(0xFFFF5252),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Como proteger seu veículo em 3 passos',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Sem burocracia, sem análise de crédito demorada e com atendimento humanizado em Rio das Ostras e Macaé.',
+                style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 15),
+              ),
+              const SizedBox(height: 36),
+
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 900;
+                  if (isWide) {
+                    return IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: passos.map((passo) {
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              child: _buildCardPasso(passo),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  } else {
+                    return Column(
+                      children: passos
+                          .map((passo) => Padding(
+                                padding: const EdgeInsets.only(bottom: 18),
+                                child: _buildCardPasso(passo),
+                              ))
+                          .toList(),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardPasso(Map<String, dynamic> passo) {
+    return Container(
+      padding: const EdgeInsets.all(26),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF263238)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (passo['corIcone'] as Color).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  passo['icone'] as IconData,
+                  color: passo['corIcone'] as Color,
+                  size: 26,
+                ),
+              ),
+              Text(
+                passo['numero'] as String,
+                style: TextStyle(
+                  color: const Color(0xFFFF5252).withValues(alpha: 0.35),
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            passo['titulo'] as String,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            passo['desc'] as String,
+            style: const TextStyle(
+              color: Color(0xFFB0BEC5),
+              fontSize: 13.5,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- NOVA SEÇÃO: COMPARATIVO TARGET 4G vs RASTREADOR COMUM 2G ---
+  Widget _buildSecaoComparativo(bool isDesktop) {
+    final comparativos = [
+      {
+        'criterio': 'Tecnologia de Rede',
+        'comum': '2G Obsoleto (Em fase de desativação total no Brasil)',
+        'target': '4G LTE Cat-M1 & NB-IoT Multi-Operadora (Pronto para 5G)',
+      },
+      {
+        'criterio': 'Chip de Dados & Cobertura',
+        'comum': 'Chip pré-pago comum (bloqueia se faltar recarga)',
+        'target': 'Chip M2M Industrial Multi-Operadora (Vivo, Claro e TIM)',
+      },
+      {
+        'criterio': 'Instalação do Equipamento',
+        'comum': 'Amadora ou faça-você-mesmo (fácil de encontrar e arrancar)',
+        'target': 'Equipe técnica própria com instalação sigilosa e profissional',
+      },
+      {
+        'criterio': 'Consumo de Bateria',
+        'comum': 'Alto consumo (drena a bateria do carro ou moto em dias)',
+        'target': 'Gestão inteligente Deep Sleep (zero risco de descarregar)',
+      },
+      {
+        'criterio': 'Bloqueio de Motor',
+        'comum': 'Corte brusco instável (risco de pane perigosa na via)',
+        'target': 'Bloqueio seguro e progressivo via app ou central',
+      },
+      {
+        'criterio': 'Aplicativo & Suporte',
+        'comum': 'App genérico chinês travado, sem suporte nem garantia',
+        'target': 'App Target 100% em português + WhatsApp local (22) 99769-4019',
+      },
+    ];
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF0C0F14),
+      padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 60 : 20, vertical: 80),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'SEGURANÇA REAL vs. ILUSÃO DE PROTEÇÃO',
+                style: TextStyle(
+                  color: Color(0xFFFF5252),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Target Rastreamento 4G vs. Rastreador Comum',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Entenda os riscos dos equipamentos genéricos baratos e veja a diferença da engenharia profissional da Target.',
+                style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 15),
+              ),
+              const SizedBox(height: 36),
+
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 750;
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161B22),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFF263238)),
+                    ),
+                    child: Column(
+                      children: [
+                        // Cabeçalho da Tabela
+                        if (isWide)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 22, vertical: 16),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF0F141A),
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(17)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    'CARACTERÍSTICA',
+                                    style: TextStyle(
+                                      color: Color(0xFF9E9E9E),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 4,
+                                  child: Text(
+                                    'RASTREADOR COMUM 2G',
+                                    style: TextStyle(
+                                      color: Color(0xFFE57373),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 4,
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.shield,
+                                          color: Color(0xFFFF5252), size: 14),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'TARGET RASTREAMENTO 4G/5G',
+                                        style: TextStyle(
+                                          color: Color(0xFFFF5252),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // Linhas
+                        ...comparativos.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          final isEven = index % 2 == 0;
+
+                          if (isWide) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 22, vertical: 16),
+                              color: isEven
+                                  ? Colors.transparent
+                                  : const Color(0xFF11161D),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      item['criterio']!,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 4,
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(Icons.close,
+                                            color: Color(0xFFEF5350), size: 16),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            item['comum']!,
+                                            style: const TextStyle(
+                                              color: Color(0xFF9E9E9E),
+                                              fontSize: 12.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 4,
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(Icons.check_circle,
+                                            color: Color(0xFF00E676), size: 16),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            item['target']!,
+                                            style: const TextStyle(
+                                              color: Color(0xFFE0E0E0),
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else {
+                            // Layout Card no Mobile
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: index < comparativos.length - 1
+                                        ? const Color(0xFF263238)
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['criterio']!,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.close,
+                                          color: Color(0xFFEF5350), size: 15),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Comum: ${item['comum']!}',
+                                          style: const TextStyle(
+                                            color: Color(0xFF9E9E9E),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.check_circle,
+                                          color: Color(0xFF00E676), size: 15),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Target: ${item['target']!}',
+                                          style: const TextStyle(
+                                            color: Color(0xFFFF8A80),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        }),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
