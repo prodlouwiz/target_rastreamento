@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'login_screen.dart';
 
@@ -36,7 +36,7 @@ Olá, central de apoio Target! Preciso de auxílio imediato para localização e
         elevation: 0,
         title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Color(0xFFFF5252), size: 22),
+            Icon(Icons.warning_amber_rounded, color: Color(0xFFFF1E2D), size: 22),
             SizedBox(width: 10),
             Text(
               'Central de Bloqueio & Emergência 24h',
@@ -72,10 +72,10 @@ Olá, central de apoio Target! Preciso de auxílio imediato para localização e
                   decoration: BoxDecoration(
                     color: const Color(0xFF261010),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFFF5252), width: 1.5),
+                    border: Border.all(color: const Color(0xFFFF1E2D), width: 1.5),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                        color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
                         blurRadius: 20,
                         offset: const Offset(0, 4),
                       ),
@@ -86,11 +86,11 @@ Olá, central de apoio Target! Preciso de auxílio imediato para localização e
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF5252).withValues(alpha: 0.2),
+                          color: const Color(0xFFFF1E2D).withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.security,
-                            color: Color(0xFFFF5252), size: 30),
+                            color: Color(0xFFFF1E2D), size: 30),
                       ),
                       const SizedBox(width: 18),
                       const Expanded(
@@ -130,7 +130,7 @@ Olá, central de apoio Target! Preciso de auxílio imediato para localização e
                       'Acesse sua conta agora mesmo. Em caso de furto, selecione seu veículo e aperte "Bloquear Motor". O corte progressivo é executado via satélite 4G em menos de 5 segundos.',
                   botaoTexto: 'Abrir Tela de Login para Bloquear',
                   botaoIcone: Icons.lock,
-                  corBotao: const Color(0xFFFF5252),
+                  corBotao: const Color(0xFFFF1E2D),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -170,7 +170,7 @@ Olá, central de apoio Target! Preciso de auxílio imediato para localização e
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF161B22),
+                    color: const Color(0xFF111A23),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFF263238)),
                   ),
@@ -227,7 +227,7 @@ Olá, central de apoio Target! Preciso de auxílio imediato para localização e
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF263238)),
       ),
@@ -299,3 +299,4 @@ Olá, central de apoio Target! Preciso de auxílio imediato para localização e
     );
   }
 }
+

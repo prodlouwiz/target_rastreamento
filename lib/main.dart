@@ -15,41 +15,42 @@ class TargetApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF121212), // Preto Profundo
-        primaryColor: const Color(0xFFFF5252), // Vermelho Target
+        scaffoldBackgroundColor: const Color(0xFF0B1117), // Preto Grafite (#0B1117)
+        primaryColor: const Color(0xFFFF1E2D), // Vermelho Target (#FF1E2D)
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFF5252),
-          secondary: Color(0xFF9E9E9E), // Cinza Secundário
-          surface: Color(0xFF1E1E1E), // Cinza Superfície
+          primary: Color(0xFFFF1E2D),
+          secondary: Color(0xFFA8B2BE), // Cinza Claro (#A8B2BE)
+          surface: Color(0xFF111A23), // Carvão Azulado (#111A23)
         ),
+        dividerColor: const Color(0xFF26313D), // Cinza Ardósia (#26313D)
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF9E9E9E)),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF26313D)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: const Color(0xFF9E9E9E).withValues(alpha: 0.3)),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF26313D)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFFF5252), width: 1.5),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFFF1E2D), width: 1.5),
           ),
-          labelStyle: const TextStyle(color: Color(0xFF9E9E9E)),
-          prefixIconColor: const Color(0xFF9E9E9E),
+          labelStyle: const TextStyle(color: Color(0xFFA8B2BE)),
+          prefixIconColor: const Color(0xFFA8B2BE),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFF5252),
-            foregroundColor: const Color(0xFFFFFFFF),
+            backgroundColor: const Color(0xFFFF1E2D),
+            foregroundColor: const Color(0xFFF5F7FA),
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             textStyle: const TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
+              letterSpacing: 0.5,
             ),
           ),
         ),

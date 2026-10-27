@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -247,20 +247,20 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: const Color(0xFF111A23),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFFFF5252), width: 1.5),
+          side: const BorderSide(color: Color(0xFFFF1E2D), width: 1.5),
         ),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.security, color: Color(0xFFFF5252), size: 24),
+              child: const Icon(Icons.security, color: Color(0xFFFF1E2D), size: 24),
             ),
             const SizedBox(width: 12),
             Text(
@@ -306,7 +306,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: bloqueado ? const Color(0xFF00E676) : const Color(0xFFFF5252),
+              backgroundColor: bloqueado ? const Color(0xFF35D49A) : const Color(0xFFFF1E2D),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -327,7 +327,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
   void _executarComandoBloqueio(bool novoEstado) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: novoEstado ? const Color(0xFFFF5252) : const Color(0xFF00E676),
+        backgroundColor: novoEstado ? const Color(0xFFFF1E2D) : const Color(0xFF35D49A),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         content: Row(
@@ -415,8 +415,8 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                         top: 12,
                         left: 12,
                         child: FloatingActionButton.small(
-                          backgroundColor: const Color(0xFF161B22),
-                          foregroundColor: const Color(0xFFFF5252),
+                          backgroundColor: const Color(0xFF111A23),
+                          foregroundColor: const Color(0xFFFF1E2D),
                           onPressed: () => _abrirDrawerVeiculosMobile(),
                           child: const Icon(Icons.menu),
                         ),
@@ -450,7 +450,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF5252),
+                    color: const Color(0xFFFF1E2D),
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: const [
                       BoxShadow(color: Color(0x66FF5252), blurRadius: 10),
@@ -480,7 +480,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF5252),
+                            color: const Color(0xFFFF1E2D),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
@@ -516,10 +516,10 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00E676),
+                    color: Color(0xFF35D49A),
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: Color(0xFF00E676), blurRadius: 6, spreadRadius: 1),
+                      BoxShadow(color: Color(0xFF35D49A), blurRadius: 6, spreadRadius: 1),
                     ],
                   ),
                 ),
@@ -542,7 +542,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
           Container(
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: const Color(0xFF161B22),
+              color: const Color(0xFF111A23),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFF263238)),
             ),
@@ -611,7 +611,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: ativo ? const Color(0xFFFF5252) : Colors.transparent,
+          color: ativo ? const Color(0xFFFF1E2D) : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
@@ -666,7 +666,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                     hintStyle: const TextStyle(color: Color(0xFF757575), fontSize: 13),
                     prefixIcon: const Icon(Icons.search, color: Color(0xFF757575), size: 18),
                     filled: true,
-                    fillColor: const Color(0xFF161B22),
+                    fillColor: const Color(0xFF111A23),
                     contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -678,7 +678,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFFFF5252)),
+                      borderSide: const BorderSide(color: Color(0xFFFF1E2D)),
                     ),
                   ),
                   onChanged: (val) => setState(() => _buscaTexto = val),
@@ -714,11 +714,11 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFFFF5252).withValues(alpha: 0.12)
+                          ? const Color(0xFFFF1E2D).withValues(alpha: 0.12)
                           : Colors.transparent,
                       border: Border(
                         left: BorderSide(
-                          color: isSelected ? const Color(0xFFFF5252) : Colors.transparent,
+                          color: isSelected ? const Color(0xFFFF1E2D) : Colors.transparent,
                           width: 4,
                         ),
                         bottom: const BorderSide(color: Color(0xFF1A222D), width: 1),
@@ -733,12 +733,12 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFFFF5252)
+                                    ? const Color(0xFFFF1E2D)
                                     : const Color(0xFF1E2633),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(v.icone,
-                                  color: isSelected ? Colors.white : const Color(0xFFFF5252),
+                                  color: isSelected ? Colors.white : const Color(0xFFFF1E2D),
                                   size: 20),
                             ),
                             const SizedBox(width: 12),
@@ -784,9 +784,9 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                                   height: 8,
                                   decoration: BoxDecoration(
                                     color: v.bloqueado
-                                        ? const Color(0xFFFF5252)
+                                        ? const Color(0xFFFF1E2D)
                                         : (v.ignicaoLigada
-                                            ? const Color(0xFF00E676)
+                                            ? const Color(0xFF35D49A)
                                             : const Color(0xFF9E9E9E)),
                                     shape: BoxShape.circle,
                                   ),
@@ -798,9 +798,9 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                                       : (v.ignicaoLigada ? 'IGNIÇÃO LIGADA' : 'DESLIGADO'),
                                   style: TextStyle(
                                     color: v.bloqueado
-                                        ? const Color(0xFFFF5252)
+                                        ? const Color(0xFFFF1E2D)
                                         : (v.ignicaoLigada
-                                            ? const Color(0xFF00E676)
+                                            ? const Color(0xFF35D49A)
                                             : const Color(0xFF9E9E9E)),
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -861,7 +861,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildMiniIndicadorFrota('3', 'Total Frota', Icons.directions_car),
-                _buildMiniIndicadorFrota('2', 'Em Rota', Icons.navigation, cor: const Color(0xFF00E676)),
+                _buildMiniIndicadorFrota('2', 'Em Rota', Icons.navigation, cor: const Color(0xFF35D49A)),
                 _buildMiniIndicadorFrota('1', 'Parado', Icons.local_parking, cor: const Color(0xFF90A4AE)),
               ],
             ),
@@ -880,10 +880,10 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: ativo ? const Color(0xFFFF5252) : const Color(0xFF161B22),
+            color: ativo ? const Color(0xFFFF1E2D) : const Color(0xFF111A23),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: ativo ? const Color(0xFFFF5252) : const Color(0xFF263238),
+              color: ativo ? const Color(0xFFFF1E2D) : const Color(0xFF263238),
             ),
           ),
           child: Center(
@@ -958,7 +958,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                       0,
                       (_indicePontoAtual + 1).clamp(1, _veiculoSelecionado.rota.length),
                     ),
-                    color: const Color(0xFFFF5252),
+                    color: const Color(0xFFFF1E2D),
                     strokeWidth: 4.5,
                   ),
                   Polyline(
@@ -978,8 +978,8 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                     point: _veiculoSelecionado.posicaoInicial,
                     radius: 200, // metros
                     useRadiusInMeter: true,
-                    color: const Color(0xFFFF5252).withValues(alpha: 0.18),
-                    borderColor: const Color(0xFFFF5252),
+                    color: const Color(0xFFFF1E2D).withValues(alpha: 0.18),
+                    borderColor: const Color(0xFFFF1E2D),
                     borderStrokeWidth: 2.0,
                   ),
                 ],
@@ -1003,7 +1003,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: isCurrent
-                              ? const Color(0xFFFF5252)
+                              ? const Color(0xFFFF1E2D)
                               : const Color(0xFF0F141A),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
@@ -1030,14 +1030,14 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                         height: 44,
                         decoration: BoxDecoration(
                           color: isCurrent
-                              ? const Color(0xFFFF5252)
+                              ? const Color(0xFFFF1E2D)
                               : const Color(0xFF1E2633),
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
                               color: isCurrent
-                                  ? const Color(0xFFFF5252).withValues(alpha: 0.5)
+                                  ? const Color(0xFFFF1E2D).withValues(alpha: 0.5)
                                   : Colors.black45,
                               blurRadius: 10,
                               spreadRadius: 2,
@@ -1108,7 +1108,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                 icon: Icon(
                   _mostrarCercaVirtual ? Icons.fence : Icons.fence_outlined,
                   color: _mostrarCercaVirtual
-                      ? const Color(0xFFFF5252)
+                      ? const Color(0xFFFF1E2D)
                       : const Color(0xFF78909C),
                   size: 20,
                 ),
@@ -1139,7 +1139,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                 '${v.bateria}V',
                 'Bateria 4G',
                 Icons.battery_charging_full,
-                const Color(0xFF00E676),
+                const Color(0xFF35D49A),
               ),
               const SizedBox(width: 8),
               _buildMiniBoxTelemetria(
@@ -1159,8 +1159,8 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: v.bloqueado
-                        ? const Color(0xFF00E676)
-                        : const Color(0xFFFF5252),
+                        ? const Color(0xFF35D49A)
+                        : const Color(0xFFFF1E2D),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(
@@ -1206,7 +1206,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFF161B22),
+          color: const Color(0xFF111A23),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: const Color(0xFF263238)),
         ),
@@ -1249,7 +1249,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
           // Botão Play / Pause
           IconButton(
             style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFFFF5252),
+              backgroundColor: const Color(0xFFFF1E2D),
               foregroundColor: Colors.white,
             ),
             icon: Icon(_emReproducao ? Icons.pause : Icons.play_arrow),
@@ -1265,7 +1265,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
               const Text(
                 'SIMULAÇÃO DE TRAJETO EM TEMPO REAL',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 10.5,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
@@ -1287,7 +1287,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
           Expanded(
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: const Color(0xFFFF5252),
+                activeTrackColor: const Color(0xFFFF1E2D),
                 inactiveTrackColor: const Color(0xFF263238),
                 thumbColor: Colors.white,
                 trackHeight: 4,
@@ -1314,14 +1314,14 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF161B22),
+              color: const Color(0xFF111A23),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: const Color(0xFF263238)),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<double>(
                 value: _velocidadeMultiplicador,
-                dropdownColor: const Color(0xFF161B22),
+                dropdownColor: const Color(0xFF111A23),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,

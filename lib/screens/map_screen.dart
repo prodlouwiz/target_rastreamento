@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -492,7 +492,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erro ao abrir rota: $e'),
-            backgroundColor: const Color(0xFFFF5252),
+            backgroundColor: const Color(0xFFFF1E2D),
           ),
         );
       }
@@ -507,7 +507,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.terminal, color: Color(0xFFFF5252), size: 22),
+            Icon(Icons.terminal, color: Color(0xFFFF1E2D), size: 22),
             SizedBox(width: 8),
             Text(
               'Diagnóstico de Telemetria',
@@ -531,7 +531,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('FECHAR', style: TextStyle(color: Color(0xFFFF5252), fontWeight: FontWeight.bold)),
+            child: const Text('FECHAR', style: TextStyle(color: Color(0xFFFF1E2D), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -546,7 +546,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.logout, color: Color(0xFFFF5252), size: 22),
+            Icon(Icons.logout, color: Color(0xFFFF1E2D), size: 22),
             SizedBox(width: 8),
             Text('Sair da Conta', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ],
@@ -562,7 +562,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF5252),
+              backgroundColor: const Color(0xFFFF1E2D),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -591,7 +591,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           children: [
             Icon(
               bloquear ? Icons.lock : Icons.lock_open,
-              color: const Color(0xFFFF5252),
+              color: const Color(0xFFFF1E2D),
               size: 24,
             ),
             const SizedBox(width: 10),
@@ -614,7 +614,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF5252),
+              backgroundColor: const Color(0xFFFF1E2D),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -656,7 +656,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Color(0xFF00E676)),
+                  const Icon(Icons.check_circle, color: Color(0xFF35D49A)),
                   const SizedBox(width: 8),
                   Text(bloquear ? 'Comando de BLOQUEIO transmitido!' : 'Comando de DESBLOQUEIO transmitido!'),
                 ],
@@ -672,7 +672,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Falha ao enviar comando: ${resp.body}'),
-              backgroundColor: const Color(0xFFFF5252),
+              backgroundColor: const Color(0xFFFF1E2D),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -683,7 +683,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Sem conexão com a central: $e'),
-            backgroundColor: const Color(0xFFFF5252),
+            backgroundColor: const Color(0xFFFF1E2D),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -722,7 +722,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   List<Marker> _gerarMarcadores() {
     return _veiculos.where((v) => v.temLocalizacaoValida).map((v) {
       final isSelecionado = _veiculoSelecionado?.placa == v.placa;
-      final corStatus = v.ignicao ? const Color(0xFF00E676) : const Color(0xFFFF5252);
+      final corStatus = v.ignicao ? const Color(0xFF35D49A) : const Color(0xFFFF1E2D);
 
       return Marker(
         point: LatLng(v.lat, v.lon),
@@ -746,7 +746,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                   color: const Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: isSelecionado ? const Color(0xFFFF5252) : const Color(0xFF333333),
+                    color: isSelecionado ? const Color(0xFFFF1E2D) : const Color(0xFF333333),
                     width: isSelecionado ? 2 : 1,
                   ),
                   boxShadow: const [
@@ -879,7 +879,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               child: Row(
                 children: [
                   // Logo Radar Vermelho Target
-                  const Icon(Icons.radar, color: Color(0xFFFF5252), size: 26),
+                  const Icon(Icons.radar, color: Color(0xFFFF1E2D), size: 26),
                   const SizedBox(width: 10),
                   // Títulos
                   Expanded(
@@ -902,7 +902,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                               width: 6,
                               height: 6,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF00E676),
+                                color: Color(0xFF35D49A),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -937,7 +937,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Color(0xFFFF5252),
+                              color: Color(0xFFFF1E2D),
                             ),
                           )
                         : const Icon(Icons.refresh, color: Colors.white, size: 20),
@@ -963,7 +963,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 borderRadius: BorderRadius.all(Radius.circular(2)),
                 child: LinearProgressIndicator(
                   minHeight: 2,
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   backgroundColor: Colors.transparent,
                 ),
               ),
@@ -991,7 +991,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                   _buildBotaoFlutuante(
                     icon: Icons.directions_outlined,
                     tooltip: 'Abrir Rota',
-                    iconColor: const Color(0xFF00E676),
+                    iconColor: const Color(0xFF35D49A),
                     onTap: () => _mostrarMenuRotas(v),
                   ),
                   const SizedBox(height: 10),
@@ -1002,7 +1002,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                   _buildBotaoFlutuante(
                     icon: Icons.my_location,
                     tooltip: 'Centralizar no Veículo',
-                    iconColor: const Color(0xFFFF5252),
+                    iconColor: const Color(0xFFFF1E2D),
                     onTap: () => _centralizarNoVeiculo(v),
                   ),
               ],
@@ -1083,7 +1083,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                           width: 7,
                                           height: 7,
                                           decoration: BoxDecoration(
-                                            color: v.ignicao ? const Color(0xFF00E676) : const Color(0xFFFF5252),
+                                            color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFFFF1E2D),
                                             shape: BoxShape.circle,
                                           ),
                                         ),
@@ -1091,7 +1091,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                         Text(
                                           v.ignicao ? 'IGNIÇÃO LIGADA' : 'IGNIÇÃO DESLIGADA',
                                           style: TextStyle(
-                                            color: v.ignicao ? const Color(0xFF00E676) : const Color(0xFF9E9E9E),
+                                            color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF9E9E9E),
                                             fontSize: 10.5,
                                             fontWeight: FontWeight.bold,
                                             letterSpacing: 0.8,
@@ -1105,11 +1105,11 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                                       decoration: BoxDecoration(
                                         color: v.ignicao
-                                            ? const Color(0xFF00E676).withValues(alpha: 0.15)
+                                            ? const Color(0xFF35D49A).withValues(alpha: 0.15)
                                             : const Color(0xFF1976D2).withValues(alpha: 0.25),
                                         borderRadius: BorderRadius.circular(5),
                                         border: Border.all(
-                                          color: v.ignicao ? const Color(0xFF00E676) : const Color(0xFF1E88E5),
+                                          color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF1E88E5),
                                           width: 0.8,
                                         ),
                                       ),
@@ -1118,7 +1118,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          color: v.ignicao ? const Color(0xFF00E676) : const Color(0xFF64B5F6),
+                                          color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF64B5F6),
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -1157,7 +1157,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                 Icons.speed,
                                 '${v.velocidade} km/h',
                                 'Velocidade',
-                                v.velocidade > 0 ? const Color(0xFF00E676) : Colors.white,
+                                v.velocidade > 0 ? const Color(0xFF35D49A) : Colors.white,
                               ),
                               _buildMetricaItem(
                                 Icons.satellite_alt_outlined,
@@ -1175,7 +1175,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                 Icons.battery_charging_full,
                                 _obterValorSensor(v, 'Batt', '6 %'),
                                 'Bateria',
-                                const Color(0xFFFF5252),
+                                const Color(0xFFFF1E2D),
                               ),
                             ],
                           ),
@@ -1247,7 +1247,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.location_on_outlined, color: Color(0xFFFF5252), size: 18),
+                                      const Icon(Icons.location_on_outlined, color: Color(0xFFFF1E2D), size: 18),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Column(
@@ -1307,7 +1307,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                         'Velocidade',
                                         '${v.velocidade} km/h',
                                         Icons.speed,
-                                        v.velocidade > 0 ? const Color(0xFF00E676) : Colors.white,
+                                        v.velocidade > 0 ? const Color(0xFF35D49A) : Colors.white,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1338,7 +1338,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                         'Bateria Interna',
                                         _obterValorSensor(v, 'Batt', '6 %'),
                                         Icons.battery_alert,
-                                        const Color(0xFFFF5252),
+                                        const Color(0xFFFF1E2D),
                                       ),
                                     ),
                                   ],
@@ -1369,14 +1369,14 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                       _buildLinhaSensor(
                                         'Ignição',
                                         v.ignicao ? 'Ligada' : 'Desligada',
-                                        v.ignicao ? const Color(0xFF00E676) : const Color(0xFF9E9E9E),
+                                        v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF9E9E9E),
                                         '17/10 19:32',
                                       ),
                                       const Divider(color: Color(0xFF222222), height: 1),
                                       _buildLinhaSensor(
                                         'Alimentação Principal',
                                         _obterValorSensor(v, 'Power', 'Connected'),
-                                        const Color(0xFF00E676),
+                                        const Color(0xFF35D49A),
                                         '15/10 11:20',
                                       ),
                                       const Divider(color: Color(0xFF222222), height: 1),
@@ -1390,7 +1390,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                       _buildLinhaSensor(
                                         'Receptor GPS',
                                         _obterValorSensor(v, 'GPS', 'On'),
-                                        const Color(0xFF00E676),
+                                        const Color(0xFF35D49A),
                                         '22:20',
                                       ),
                                     ],
@@ -1416,8 +1416,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         style: OutlinedButton.styleFrom(
-                                          foregroundColor: const Color(0xFFFF5252),
-                                          side: const BorderSide(color: Color(0xFFFF5252), width: 1.5),
+                                          foregroundColor: const Color(0xFFFF1E2D),
+                                          side: const BorderSide(color: Color(0xFFFF1E2D), width: 1.5),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(12),
                                           ),

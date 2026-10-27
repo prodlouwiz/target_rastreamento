@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: isErro ? const Color(0xFFFF5252) : const Color(0xFF00E676),
+            color: isErro ? const Color(0xFFFF1E2D) : const Color(0xFF35D49A),
             width: 1,
           ),
         ),
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Icon(
               isErro ? Icons.error_outline : Icons.check_circle_outline,
-              color: isErro ? const Color(0xFFFF5252) : const Color(0xFF00E676),
+              color: isErro ? const Color(0xFFFF1E2D) : const Color(0xFF35D49A),
               size: 22,
             ),
             const SizedBox(width: 12),
@@ -191,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.lock, size: 12, color: Color(0xFF00E676)),
+                            Icon(Icons.lock, size: 12, color: Color(0xFF35D49A)),
                             SizedBox(width: 4),
                             Text('Acesso Seguro', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 10)),
                           ],
@@ -283,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 24,
                               child: Checkbox(
                                 value: _lembrarMe,
-                                activeColor: const Color(0xFFFF5252),
+                                activeColor: const Color(0xFFFF1E2D),
                                 checkColor: Colors.white,
                                 side: const BorderSide(color: Color(0xFF9E9E9E), width: 1.5),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -358,11 +358,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 18),
 
                   TextButton.icon(
-                    icon: const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF5252), size: 16),
+                    icon: const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF1E2D), size: 16),
                     label: const Text(
                       '🚨 Central de Bloqueio & Emergência 24h',
                       style: TextStyle(
-                        color: Color(0xFFFF5252),
+                        color: Color(0xFFFF1E2D),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),

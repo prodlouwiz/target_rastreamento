@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OrcamentoScreen extends StatefulWidget {
@@ -101,7 +101,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
         elevation: 0,
         title: const Row(
           children: [
-            Icon(Icons.calculate_outlined, color: Color(0xFFFF5252), size: 22),
+            Icon(Icons.calculate_outlined, color: Color(0xFFFF1E2D), size: 22),
             SizedBox(width: 10),
             Text(
               'Simulador de Orçamento & Cotação',
@@ -135,7 +135,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
                 const Text(
                   'COTAÇÃO ONLINE EM 1 MINUTO',
                   style: TextStyle(
-                    color: Color(0xFFFF5252),
+                    color: Color(0xFFFF1E2D),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 2.0,
@@ -242,7 +242,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF161B22),
+            color: const Color(0xFF111A23),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF263238)),
           ),
@@ -270,7 +270,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
               const SizedBox(width: 16),
               IconButton(
                 style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF5252),
+                  backgroundColor: const Color(0xFFFF1E2D),
                   foregroundColor: Colors.white,
                 ),
                 icon: const Icon(Icons.add),
@@ -282,13 +282,13 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00E676).withValues(alpha: 0.15),
+                    color: const Color(0xFF35D49A).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text(
                     'Desconto Frota Aplicado!',
                     style: TextStyle(
-                      color: Color(0xFF00E676),
+                      color: Color(0xFF35D49A),
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -351,7 +351,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF161B22),
+            color: const Color(0xFF111A23),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF263238)),
           ),
@@ -359,7 +359,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
             child: DropdownButton<String>(
               isExpanded: true,
               value: _cidade,
-              dropdownColor: const Color(0xFF161B22),
+              dropdownColor: const Color(0xFF111A23),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 14,
@@ -393,11 +393,11 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: ativo
-              ? const Color(0xFFFF5252).withValues(alpha: 0.15)
-              : const Color(0xFF161B22),
+              ? const Color(0xFFFF1E2D).withValues(alpha: 0.15)
+              : const Color(0xFF111A23),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: ativo ? const Color(0xFFFF5252) : const Color(0xFF263238),
+            color: ativo ? const Color(0xFFFF1E2D) : const Color(0xFF263238),
             width: ativo ? 2 : 1,
           ),
         ),
@@ -406,7 +406,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
           children: [
             Icon(
               icone,
-              color: ativo ? const Color(0xFFFF5252) : const Color(0xFF90A4AE),
+              color: ativo ? const Color(0xFFFF1E2D) : const Color(0xFF90A4AE),
               size: 26,
             ),
             const SizedBox(height: 10),
@@ -444,11 +444,11 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: ativo
-              ? const Color(0xFFFF5252).withValues(alpha: 0.12)
-              : const Color(0xFF161B22),
+              ? const Color(0xFFFF1E2D).withValues(alpha: 0.12)
+              : const Color(0xFF111A23),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: ativo ? const Color(0xFFFF5252) : const Color(0xFF263238),
+            color: ativo ? const Color(0xFFFF1E2D) : const Color(0xFF263238),
             width: ativo ? 2 : 1,
           ),
         ),
@@ -456,7 +456,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
           children: [
             Icon(
               ativo ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: ativo ? const Color(0xFFFF5252) : const Color(0xFF78909C),
+              color: ativo ? const Color(0xFFFF1E2D) : const Color(0xFF78909C),
               size: 20,
             ),
             const SizedBox(width: 14),
@@ -480,7 +480,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF5252),
+                            color: const Color(0xFFFF1E2D),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
@@ -507,7 +507,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
             Text(
               preco,
               style: TextStyle(
-                color: ativo ? const Color(0xFFFF5252) : Colors.white,
+                color: ativo ? const Color(0xFFFF1E2D) : Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -523,15 +523,15 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFFFF5252).withValues(alpha: 0.4),
+          color: const Color(0xFFFF1E2D).withValues(alpha: 0.4),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF5252).withValues(alpha: 0.1),
+            color: const Color(0xFFFF1E2D).withValues(alpha: 0.1),
             blurRadius: 24,
             offset: const Offset(0, 6),
           ),
@@ -543,7 +543,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
           const Text(
             'RESUMO DA PROPOSTA',
             style: TextStyle(
-              color: Color(0xFFFF5252),
+              color: Color(0xFFFF1E2D),
               fontSize: 11,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.5,
@@ -590,7 +590,7 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
                   Text(
                     'R\$ ${_totalMensal.toStringAsFixed(2)}',
                     style: const TextStyle(
-                      color: Color(0xFFFF5252),
+                      color: Color(0xFFFF1E2D),
                       fontSize: 26,
                       fontWeight: FontWeight.w900,
                     ),
@@ -648,3 +648,4 @@ Gostaria de verificar a disponibilidade de agendamento da instalação técnica 
     );
   }
 }
+

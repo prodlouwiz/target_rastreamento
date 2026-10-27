@@ -1,5 +1,4 @@
-import 'dart:async';
-import 'dart:math' as math;
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -34,9 +33,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
 
   // WhatsApp oficial da Target
   static const String _whatsappNumero = '5522997694019';
-
-  // --- ANIMAÇÃO DO RADAR HOLOGRÁFICO ---
-  late AnimationController _radarController;
 
   // --- ESTADO DO SIMULADOR INTERATIVO DO APP ---
   String _veiculoSelecionado = 'carro'; // 'carro', 'moto', 'frota'
@@ -103,12 +99,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   @override
   void initState() {
     super.initState();
-
-    _radarController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..repeat();
-
     _iniciarCicloProvaSocial();
   }
 
@@ -133,7 +123,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
 
   @override
   void dispose() {
-    _radarController.dispose();
     _timerMovimento?.cancel();
     _timerToast?.cancel();
     _scrollController.dispose();
@@ -222,7 +211,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       SnackBar(
         content: Text(texto, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor:
-            isAlerta ? const Color(0xFFFF5252) : const Color(0xFF00E676),
+            isAlerta ? const Color(0xFFFF1E2D) : const Color(0xFF35D49A),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -254,7 +243,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     final isTablet = screenWidth >= 650 && screenWidth < 980;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0F13), // Preto Profundo Tecnológico
+      backgroundColor: const Color(0xFF0B1117), // Preto Profundo Tecnológico
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF25D366), // Verde WhatsApp Oficial
         foregroundColor: Colors.white,
@@ -273,40 +262,21 @@ class _LandingPageScreenState extends State<LandingPageScreen>
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // 1. NAVBAR RESPONSIVA
+              // 1. NAVBAR RESPONSIVA OFICIAL (BRANDING BOOK)
               SliverAppBar(
-                backgroundColor: const Color(0xFF0C0F13).withValues(alpha: 0.95),
+                backgroundColor: TargetColors.darkBg.withValues(alpha: 0.96),
                 floating: true,
                 pinned: true,
-                elevation: 2,
-                toolbarHeight: 72,
+                elevation: 0,
+                toolbarHeight: 74,
                 titleSpacing: isDesktop ? 40 : 16,
                 title: Row(
                   children: [
-                    const Icon(Icons.radar, color: Color(0xFFFF5252), size: 28),
-                    const SizedBox(width: 10),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'TARGET',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2.5,
-                          ),
-                        ),
-                        Text(
-                          'RASTREAMENTO VEICULAR',
-                          style: TextStyle(
-                            color: Color(0xFF9E9E9E),
-                            fontSize: 8.5,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ],
+                    InkWell(
+                      onTap: () => _scrollController.animateTo(0,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeInOut),
+                      child: const TargetLogoHorizontal(iconSize: 32),
                     ),
                     const Spacer(),
 
@@ -343,22 +313,22 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                          color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                              color: const Color(0xFFFF5252).withValues(alpha: 0.6)),
+                              color: const Color(0xFFFF1E2D).withValues(alpha: 0.6)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.warning_amber_rounded,
-                                color: Color(0xFFFF5252), size: 14),
+                                color: Color(0xFFFF1E2D), size: 14),
                             if (isDesktop) ...[
                               const SizedBox(width: 4),
                               const Text(
                                 'Emergência 24h',
                                 style: TextStyle(
-                                  color: Color(0xFFFF5252),
+                                  color: Color(0xFFFF1E2D),
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -380,7 +350,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     if (isDesktop)
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF161B22),
+                          backgroundColor: const Color(0xFF111A23),
                           foregroundColor: Colors.white,
                           side: const BorderSide(
                               color: Color(0xFF00E5FF), width: 1.0),
@@ -413,7 +383,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(
-                            color: Color(0xFFFF5252), width: 1.2),
+                            color: Color(0xFFFF1E2D), width: 1.2),
                         backgroundColor: const Color(0xFF1E1E1E),
                         padding: EdgeInsets.symmetric(
                             horizontal: isDesktop ? 18 : 12, vertical: 12),
@@ -421,7 +391,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                             borderRadius: BorderRadius.circular(10)),
                       ),
                       icon: const Icon(Icons.login,
-                          size: 16, color: Color(0xFFFF5252)),
+                          size: 16, color: Color(0xFFFF1E2D)),
                       label: Text(
                         isDesktop ? 'Área do Cliente' : 'Login',
                         style: const TextStyle(
@@ -467,8 +437,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    // HERO SECTION COM RADAR HOLOGRÁFICO
-                    _buildHeroSectionComRadar(isDesktop),
+                    // HERO SECTION OFICIAL DO BRANDING BOOK (LAYOUT EM 2 COLUNAS)
+                    _buildHeroSection(isDesktop),
 
                     // BARRA DE CATEGORIAS PROFISSIONAIS
                     _buildCategoriasBar(isDesktop),
@@ -558,254 +528,577 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 1. HERO SECTION COM RADAR ---
-  Widget _buildHeroSectionComRadar(bool isDesktop) {
+  // --- 1. HERO SECTION OFICIAL DO BRANDING BOOK (LAYOUT EM 2 COLUNAS) ---
+  Widget _buildHeroSection(bool isDesktop) {
     return Container(
       width: double.infinity,
+      color: TargetColors.darkBg, // #0B1117 (Preto Grafite)
       padding: EdgeInsets.symmetric(
         horizontal: isDesktop ? 60 : 20,
-        vertical: isDesktop ? 80 : 50,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0C0F13),
-        gradient: RadialGradient(
-          center: Alignment(0.4, -0.5),
-          radius: 1.4,
-          colors: [
-            Color(0x33FF5252),
-            Color(0xFF0C0F13),
-          ],
-        ),
+        vertical: isDesktop ? 70 : 40,
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.35,
-                  child: AnimatedBuilder(
-                    animation: _radarController,
-                    builder: (context, child) {
-                      return CustomPaint(
-                        painter: _RadarMilitarPainter(_radarController.value),
-                      );
-                    },
-                  ),
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: isDesktop
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Coluna Esquerda: Texto objetivo, proposta de valor e CTAs
+                    Expanded(
+                      flex: 6,
+                      child: _buildHeroConteudoTexto(isDesktop),
+                    ),
+                    const SizedBox(width: 50),
+                    // Coluna Direita: Mockup Realista de Smartphone do App
+                    Expanded(
+                      flex: 5,
+                      child: Center(child: _buildHeroMockupSmartphoneRealista()),
+                    ),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildHeroConteudoTexto(isDesktop),
+                    const SizedBox(height: 40),
+                    _buildHeroMockupSmartphoneRealista(),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroConteudoTexto(bool isDesktop) {
+    return Column(
+      crossAxisAlignment:
+          isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      children: [
+        // Eyebrow Oficial
+        Row(
+          mainAxisSize: isDesktop ? MainAxisSize.min : MainAxisSize.max,
+          mainAxisAlignment:
+              isDesktop ? MainAxisAlignment.start : MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: TargetColors.red,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'RASTREAMENTO VEICULAR',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                color: TargetColors.red,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 2.0,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Título Principal Oficial (Branding Book)
+        Text(
+          'Seu veículo sempre\nsob controle.',
+          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: isDesktop ? 48 : 34,
+            fontWeight: FontWeight.w900,
+            color: TargetColors.textWhite,
+            height: 1.12,
+            letterSpacing: -0.8,
+          ),
+        ),
+        const SizedBox(height: 18),
+
+        // Parágrafo Direto e Sóbrio (Branding Book)
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Text(
+            'Acompanhe seu veículo em tempo real, consulte trajetos e tenha mais controle na rotina com uma plataforma simples e suporte próximo.',
+            textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              color: TargetColors.textMuted,
+              fontSize: 16,
+              height: 1.55,
+            ),
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // Ações (CTAs principais)
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: isDesktop ? WrapAlignment.start : WrapAlignment.center,
+          children: [
+            // Botão Primário (#FF1E2D)
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TargetColors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.chat, size: 18),
+              label: const Text(
+                'Falar com um especialista',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF161B22).withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF2C3E50)),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black45, blurRadius: 10),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFFB300),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Color(0xFFFFB300),
-                                  blurRadius: 6,
-                                  spreadRadius: 1),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Tecnologia de Ponta 4G & 5G • Multi-Operadora (Vivo, Claro, TIM)',
-                          style: TextStyle(
-                            color: Color(0xFFB0BEC5),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: const TextSpan(
-                      style: TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: 46,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        height: 1.15,
-                        letterSpacing: -0.5,
-                      ),
-                      children: [
-                        TextSpan(text: 'Segurança e\nMonitoramento '),
-                        TextSpan(
-                          text: 'em\nTempo Real',
-                          style: TextStyle(
-                            color: Color(0xFFFF5252),
-                            shadows: [
-                              Shadow(color: Color(0x88FF5252), blurRadius: 26),
-                            ],
-                          ),
-                        ),
-                        TextSpan(text: ' para seu\nCarro, Moto ou Frota'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 720),
-                    child: const Text(
-                      'Rastreamento veicular via satélite com cobertura 4G, cercas virtuais inteligentes, relatórios gerenciais e bloqueio de motor imediato na palma da sua mão.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFF9E9E9E),
-                        fontSize: 16,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 36),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 14,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF5252),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 28, vertical: 18),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          elevation: 6,
-                        ),
-                        icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                        label: const Text(
-                          'Falar com um Especialista',
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5),
-                        ),
-                        onPressed: () => _abrirWhatsApp(
-                            'Olá! Gostaria de falar com um especialista sobre o rastreamento da Target.'),
-                      ),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(
-                              color: Color(0xFF333333), width: 1.5),
-                          backgroundColor: const Color(0xFF161B22),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 26, vertical: 18),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.touch_app_outlined,
-                            size: 20, color: Color(0xFFFF5252)),
-                        label: const Text(
-                          'Testar App ao Vivo',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                        onPressed: () => _rolarParaSecao(_simuladorKey),
-                      ),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(
-                              color: Color(0xFF00E5FF), width: 1.4),
-                          backgroundColor: const Color(0xFF161B22),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 18),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.desktop_windows,
-                            size: 20, color: Color(0xFF00E5FF)),
-                        label: const Text(
-                          'Plataforma Web (PC)',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF00E5FF),
-                          ),
-                        ),
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const PlataformaWebScreen()),
-                        ),
-                      ),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(
-                              color: Color(0xFFFFB300), width: 1.2),
-                          backgroundColor: const Color(0xFF161B22),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 22, vertical: 18),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.calculate_outlined,
-                            size: 20, color: Color(0xFFFFB300)),
-                        label: const Text(
-                          'Simular Orçamento',
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFFB300)),
-                        ),
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const OrcamentoScreen()),
-                        ),
-                      ),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(
-                              color: Color(0xFF2C2C2C), width: 1.2),
-                          backgroundColor: const Color(0xFF1E1E1E),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 22, vertical: 18),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.person_outline,
-                            size: 20, color: Color(0xFF9E9E9E)),
-                        label: const Text(
-                          'Área do Cliente',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                        onPressed: _irParaLogin,
-                      ),
-                    ],
-                  ),
-                ],
+              onPressed: () => _abrirWhatsApp(
+                  'Olá! Gostaria de falar com um especialista sobre o rastreamento da Target.'),
+            ),
+
+            // Botão Secundário (#111A23 com borda #26313D) - Ver Planos e Preços
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: TargetColors.textWhite,
+                side: const BorderSide(color: TargetColors.line, width: 1.2),
+                backgroundColor: TargetColors.panel,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.tune, size: 18, color: TargetColors.textMuted),
+              label: const Text(
+                'Ver Planos e Preços',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: TargetColors.textWhite,
+                ),
+              ),
+              onPressed: () => _rolarParaSecao(_planosKey),
+            ),
+
+            // Botão Plataforma Web (PC)
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: TargetColors.textWhite,
+                side: const BorderSide(color: TargetColors.line, width: 1.2),
+                backgroundColor: TargetColors.panel,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 18, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.desktop_windows,
+                  size: 18, color: TargetColors.blue),
+              label: const Text(
+                'Plataforma Web (PC)',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: TargetColors.textWhite,
+                ),
+              ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const PlataformaWebScreen()),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 28),
+
+        // Faixa de Confiança Sóbria
+        Row(
+          mainAxisSize: isDesktop ? MainAxisSize.min : MainAxisSize.max,
+          mainAxisAlignment:
+              isDesktop ? MainAxisAlignment.start : MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.verified, color: TargetColors.green, size: 16),
+            const SizedBox(width: 8),
+            const Flexible(
+              child: Text(
+                'Instalação técnica própria em Rio das Ostras e Macaé • Equipamento Homologado ANATEL',
+                style: TextStyle(
+                  color: TargetColors.textMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // --- MOCKUP REALISTA DO SMARTPHONE NO HERO ---
+  Widget _buildHeroMockupSmartphoneRealista() {
+    final pontoAtual = const LatLng(-22.504771, -41.920289); // Rio das Ostras / Macaé
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 320,
+          height: 560,
+          decoration: BoxDecoration(
+            color: TargetColors.panel, // #111A23
+            borderRadius: BorderRadius.circular(34),
+            border: Border.all(color: TargetColors.line, width: 2), // #26313D
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black87,
+                blurRadius: 36,
+                offset: Offset(0, 14),
               ),
             ],
           ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: Stack(
+              children: [
+                // 1. MAPA DO APLICATIVO EM MODO NOTURNO REAL
+                Positioned.fill(
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: pontoAtual,
+                      initialZoom: 15.5,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                      ),
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.target.rastreamento',
+                        tileBuilder: darkModeTileBuilder,
+                      ),
+                      // Marcador do Veículo
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: pontoAtual,
+                            width: 80,
+                            height: 70,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: TargetColors.panel,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                        color: TargetColors.line),
+                                  ),
+                                  child: const Text(
+                                    'BRA2E19',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: _motorBloqueado
+                                        ? TargetColors.red
+                                        : const Color(0xFF1E2D3D),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.white, width: 2),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                          color: Colors.black54,
+                                          blurRadius: 6),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.directions_car,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 2. TOP BAR DO SMARTPHONE (NOTCH + STATUS)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          TargetColors.darkBg.withValues(alpha: 0.95),
+                          TargetColors.darkBg.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        // Notch
+                        Center(
+                          child: Container(
+                            width: 70,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: TargetColors.darkBg,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Status Bar Interna
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const TargetLogoHorizontal(
+                              iconSize: 20,
+                              compact: true,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: TargetColors.panel,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: TargetColors.line),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: _motorBloqueado
+                                          ? TargetColors.red
+                                          : TargetColors.green,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    _motorBloqueado ? 'BLOQUEADO' : '4G ONLINE',
+                                    style: TextStyle(
+                                      color: _motorBloqueado
+                                          ? TargetColors.red
+                                          : TargetColors.green,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 3. CARD INFERIOR REALISTA: VEÍCULO + BOTÃO DIRETO DE BLOQUEIO DE MOTOR
+                Positioned(
+                  left: 14,
+                  right: 14,
+                  bottom: 14,
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: TargetColors.panelAlt.withValues(alpha: 0.96), // #151F2A
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: TargetColors.line, width: 1.2), // #26313D
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black87,
+                          blurRadius: 18,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Identificação do Veículo
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Toyota Corolla XEi',
+                                  style: TextStyle(
+                                    color: TargetColors.textWhite,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Av. Brasília, Costazul · Rio das Ostras',
+                                  style: TextStyle(
+                                    color: TargetColors.textMuted,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const MercosulPlate(
+                              plate: 'BRA2E19',
+                              height: 22,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Métricas Rápidas (Ignição e Velocidade)
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: _motorBloqueado
+                                    ? TargetColors.red
+                                    : TargetColors.green,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _motorBloqueado
+                                  ? 'IGNIÇÃO CORTADA'
+                                  : 'IGNIÇÃO LIGADA · 58 km/h',
+                              style: TextStyle(
+                                color: _motorBloqueado
+                                    ? TargetColors.red
+                                    : TargetColors.green,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // BOTÃO DIRETO: BLOQUEAR MOTOR (#FF1E2D)
+                        SizedBox(
+                          height: 40,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _motorBloqueado
+                                  ? TargetColors.green
+                                  : TargetColors.red, // #FF1E2D
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                            icon: Icon(
+                              _motorBloqueado ? Icons.lock_open : Icons.lock,
+                              size: 15,
+                            ),
+                            label: Text(
+                              _motorBloqueado
+                                  ? 'REATIVAR MOTOR'
+                                  : 'BLOQUEAR MOTOR',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            onPressed: _executarToggleBloqueioHero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          '◉ Interface real do aplicativo · Simulação interativa',
+          style: TextStyle(
+            color: Color(0xFF647180),
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _executarToggleBloqueioHero() {
+    final novoEstado = !_motorBloqueado;
+    setState(() {
+      _motorBloqueado = novoEstado;
+      if (novoEstado) {
+        _velocidade = 0;
+        _ignicaoLigada = false;
+      } else {
+        _ignicaoLigada = true;
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor:
+            novoEstado ? TargetColors.red : TargetColors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        content: Row(
+          children: [
+            Icon(novoEstado ? Icons.lock : Icons.lock_open,
+                color: Colors.white, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                novoEstado
+                    ? 'Comando enviado: Motor BLOQUEADO com sucesso!'
+                    : 'Comando enviado: Ignição REATIVADA com sucesso!',
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -838,7 +1131,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(c['icon'] as IconData,
-                      color: const Color(0xFFFF5252), size: 18),
+                      color: const Color(0xFFFF1E2D), size: 18),
                   const SizedBox(width: 8),
                   Text(
                     c['nome'] as String,
@@ -890,7 +1183,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(item['icon'] as IconData,
-                      color: const Color(0xFFFF5252), size: 17),
+                      color: const Color(0xFFFF1E2D), size: 17),
                   const SizedBox(width: 8),
                   Text(
                     item['texto'] as String,
@@ -923,9 +1216,9 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF0C0F13),
+            Color(0xFF0B1117),
             Color(0xFF131922),
-            Color(0xFF0C0F13),
+            Color(0xFF0B1117),
           ],
         ),
       ),
@@ -937,7 +1230,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const Text(
                 'EXPERIMENTE AO VIVO',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -966,7 +1259,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 margin: const EdgeInsets.only(bottom: 24),
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B22),
+                  color: const Color(0xFF111A23),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFF2C3E50)),
                 ),
@@ -979,7 +1272,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF5252),
+                        color: const Color(0xFFFF1E2D),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Row(
@@ -1120,7 +1413,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: ativo ? const Color(0xFFFF5252) : Colors.transparent,
+          color: ativo ? const Color(0xFFFF1E2D) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -1168,8 +1461,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     }
 
     final corStatus = _motorBloqueado
-        ? const Color(0xFFFF5252)
-        : (_emMovimento ? const Color(0xFF00E676) : const Color(0xFF1E88E5));
+        ? const Color(0xFFFF1E2D)
+        : (_emMovimento ? const Color(0xFF35D49A) : const Color(0xFF1E88E5));
 
     final textoStatus = _motorBloqueado
         ? 'MOTOR BLOQUEADO'
@@ -1182,18 +1475,18 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         constraints: const BoxConstraints(maxWidth: 390),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF161B22),
+          color: const Color(0xFF111A23),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(
             color: _motorBloqueado
-                ? const Color(0xFFFF5252)
+                ? const Color(0xFFFF1E2D)
                 : const Color(0xFF334155),
             width: _motorBloqueado ? 2.5 : 2,
           ),
           boxShadow: [
             BoxShadow(
               color: _motorBloqueado
-                  ? const Color(0xFFFF5252).withValues(alpha: 0.35)
+                  ? const Color(0xFFFF1E2D).withValues(alpha: 0.35)
                   : Colors.black87,
               blurRadius: 30,
               spreadRadius: 2,
@@ -1233,7 +1526,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.radar, color: Color(0xFFFF5252), size: 18),
+                    Icon(Icons.radar, color: Color(0xFFFF1E2D), size: 18),
                     SizedBox(width: 6),
                     Text(
                       'TARGET 4G LIVE',
@@ -1251,24 +1544,24 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: _motorBloqueado
-                        ? const Color(0xFFFF5252).withValues(alpha: 0.2)
-                        : const Color(0xFF00E676).withValues(alpha: 0.2),
+                        ? const Color(0xFFFF1E2D).withValues(alpha: 0.2)
+                        : const Color(0xFF35D49A).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.circle,
                           color: _motorBloqueado
-                              ? const Color(0xFFFF5252)
-                              : const Color(0xFF00E676),
+                              ? const Color(0xFFFF1E2D)
+                              : const Color(0xFF35D49A),
                           size: 6),
                       const SizedBox(width: 4),
                       Text(
                         _motorBloqueado ? 'BLOQUEADO' : 'ONLINE',
                         style: TextStyle(
                           color: _motorBloqueado
-                              ? const Color(0xFFFF5252)
-                              : const Color(0xFF00E676),
+                              ? const Color(0xFFFF1E2D)
+                              : const Color(0xFF35D49A),
                           fontSize: 9.5,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1336,8 +1629,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                               height: 6,
                               decoration: BoxDecoration(
                                 color: _ignicaoLigada
-                                    ? const Color(0xFF00E676)
-                                    : const Color(0xFFFF5252),
+                                    ? const Color(0xFF35D49A)
+                                    : const Color(0xFFFF1E2D),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -1348,8 +1641,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                                   : 'IGNIÇÃO DESLIGADA',
                               style: TextStyle(
                                 color: _ignicaoLigada
-                                    ? const Color(0xFF00E676)
-                                    : const Color(0xFFFF5252),
+                                    ? const Color(0xFF35D49A)
+                                    : const Color(0xFFFF1E2D),
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1427,9 +1720,9 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                                   point: pontoMapa,
                                   radius: 140, // raio em metros
                                   useRadiusInMeter: true,
-                                  color: const Color(0xFFFF5252)
+                                  color: const Color(0xFFFF1E2D)
                                       .withValues(alpha: 0.22),
-                                  borderColor: const Color(0xFFFF5252),
+                                  borderColor: const Color(0xFFFF1E2D),
                                   borderStrokeWidth: 2,
                                 ),
                               ],
@@ -1501,7 +1794,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF161B22).withValues(alpha: 0.9),
+                            color: const Color(0xFF111A23).withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: const Color(0xFF2C3E50)),
                           ),
@@ -1511,7 +1804,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                                 _abaSimulador == 'cerca'
                                     ? Icons.fence
                                     : Icons.location_on,
-                                color: const Color(0xFFFF5252),
+                                color: const Color(0xFFFF1E2D),
                                 size: 13,
                               ),
                               const SizedBox(width: 5),
@@ -1553,7 +1846,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         children: [
                           Text('RESUMO DO DIA',
                               style: TextStyle(
-                                  color: Color(0xFFFF5252),
+                                  color: Color(0xFFFF1E2D),
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1)),
@@ -1584,12 +1877,12 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF00E676).withValues(alpha: 0.15),
+                              color: const Color(0xFF35D49A).withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text('Sem violações',
                                 style: TextStyle(
-                                    color: Color(0xFF00E676),
+                                    color: Color(0xFF35D49A),
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.bold)),
                           ),
@@ -1611,7 +1904,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _motorBloqueado
-                      ? const Color(0xFFFF5252)
+                      ? const Color(0xFFFF1E2D)
                       : const Color(0xFF1E293B),
                 ),
               ),
@@ -1643,13 +1936,13 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildMiniMetrica(Icons.speed, '${_velocidade.toInt()} km/h',
-                    'Velocidade', _velocidade > 0 ? const Color(0xFF00E676) : Colors.white),
+                    'Velocidade', _velocidade > 0 ? const Color(0xFF35D49A) : Colors.white),
                 _buildMiniMetrica(Icons.satellite_alt, '16 sats', 'Satélites',
                     const Color(0xFFFFB300)),
                 _buildMiniMetrica(Icons.route,
                     '${_odometro.toStringAsFixed(2)} km', 'Odômetro', Colors.white),
                 _buildMiniMetrica(Icons.battery_charging_full, '98%', 'Bateria',
-                    const Color(0xFF00E676)),
+                    const Color(0xFF35D49A)),
               ],
             ),
           ],
@@ -1667,7 +1960,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: ativo ? const Color(0xFFFF5252) : Colors.transparent,
+            color: ativo ? const Color(0xFFFF1E2D) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           alignment: Alignment.center,
@@ -1721,7 +2014,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         const Text(
           'COMANDOS E TELEMETRIA',
           style: TextStyle(
-            color: Color(0xFFFF5252),
+            color: Color(0xFFFF1E2D),
             fontSize: 12,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
@@ -1751,7 +2044,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: _motorBloqueado
                   ? const Color(0xFF00C853)
-                  : const Color(0xFFFF5252),
+                  : const Color(0xFFFF1E2D),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -1790,8 +2083,8 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               _emMovimento ? Icons.stop_circle_outlined : Icons.play_arrow,
               size: 20,
               color: _emMovimento
-                  ? const Color(0xFFFF5252)
-                  : const Color(0xFF00E676),
+                  ? const Color(0xFFFF1E2D)
+                  : const Color(0xFF35D49A),
             ),
             label: Text(
               _emMovimento ? 'PARAR VEÍCULO' : 'SIMULAR MOVIMENTO (ACELERAR)',
@@ -1834,14 +2127,14 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF161B22),
+            color: const Color(0xFF111A23),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: const Color(0xFF2C3E50)),
           ),
           child: Row(
             children: [
               const Icon(Icons.check_circle,
-                  color: Color(0xFF00E676), size: 20),
+                  color: Color(0xFF35D49A), size: 20),
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
@@ -1958,7 +2251,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     children: [
                       TextButton.icon(
                         style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFFFF5252),
+                          foregroundColor: const Color(0xFFFF1E2D),
                           padding: EdgeInsets.zero,
                         ),
                         icon: const Icon(Icons.lock, size: 13),
@@ -2007,7 +2300,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const Text(
                 'ZONAS SEGURAS & GEOFENCING',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -2076,7 +2369,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       width: isDesktop ? 370 : double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFF2C3E50)),
       ),
@@ -2088,10 +2381,10 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                  color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icone, color: const Color(0xFFFF5252), size: 22),
+                child: Icon(icone, color: const Color(0xFFFF1E2D), size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2120,7 +2413,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.radar, size: 12, color: Color(0xFFFF5252)),
+                const Icon(Icons.radar, size: 12, color: Color(0xFFFF1E2D)),
                 const SizedBox(width: 6),
                 Text(raio,
                     style: const TextStyle(
@@ -2139,7 +2432,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   Widget _buildSecaoRelatorios(bool isDesktop) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF0C0F13),
+      color: const Color(0xFF0B1117),
       padding: EdgeInsets.symmetric(
           horizontal: isDesktop ? 60 : 20, vertical: 70),
       child: Center(
@@ -2151,7 +2444,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const Text(
                 'GESTÃO, CONTROLE & HISTÓRICO',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -2223,7 +2516,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       width: isDesktop ? 275 : double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF2C3E50)),
       ),
@@ -2233,10 +2526,10 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+              color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icone, color: const Color(0xFFFF5252), size: 20),
+            child: Icon(icone, color: const Color(0xFFFF1E2D), size: 20),
           ),
           const SizedBox(height: 12),
           Text(
@@ -2308,21 +2601,21 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                      color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                           color:
-                              const Color(0xFFFF5252).withValues(alpha: 0.4)),
+                              const Color(0xFFFF1E2D).withValues(alpha: 0.4)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.wifi, color: Color(0xFFFF5252), size: 14),
+                        Icon(Icons.wifi, color: Color(0xFFFF1E2D), size: 14),
                         SizedBox(width: 6),
                         Text(
                           'CONECTIVIDADE M2M MULTI-OPERADORA',
                           style: TextStyle(
-                            color: Color(0xFFFF5252),
+                            color: Color(0xFFFF1E2D),
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.5,
@@ -2357,7 +2650,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B22),
+                  color: const Color(0xFF111A23),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFF2C3E50)),
                 ),
@@ -2374,11 +2667,11 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           width: 10,
                           height: 10,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF00E676),
+                            color: Color(0xFF35D49A),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Color(0xFF00E676),
+                                color: Color(0xFF35D49A),
                                 blurRadius: 8,
                                 spreadRadius: 2,
                               ),
@@ -2452,11 +2745,11 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   color: const Color(0xFF0F141A),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: const Color(0xFFFF5252).withValues(alpha: 0.25)),
+                      color: const Color(0xFFFF1E2D).withValues(alpha: 0.25)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.alt_route, color: Color(0xFFFF5252), size: 24),
+                    Icon(Icons.alt_route, color: Color(0xFFFF1E2D), size: 24),
                     SizedBox(width: 14),
                     Expanded(
                       child: Text(
@@ -2482,7 +2775,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF263238)),
       ),
@@ -2494,12 +2787,12 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                  color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   item['icone'] as IconData,
-                  color: const Color(0xFFFF5252),
+                  color: const Color(0xFFFF1E2D),
                   size: 22,
                 ),
               ),
@@ -2607,7 +2900,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       {
         'numero': '02',
         'icone': Icons.build_circle,
-        'corIcone': const Color(0xFFFF5252),
+        'corIcone': const Color(0xFFFF1E2D),
         'titulo': '2. Instalação Técnica Sigilosa',
         'desc':
             'Nossa equipe técnica própria realiza a instalação de forma 100% oculta e segura no seu carro ou moto. Sem cortar chicotes originais, mantendo a garantia de fábrica do veículo.',
@@ -2636,7 +2929,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const Text(
                 'PROCESSO SIMPLES & RÁPIDO',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -2698,7 +2991,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     return Container(
       padding: const EdgeInsets.all(26),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFF263238)),
       ),
@@ -2723,7 +3016,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               Text(
                 passo['numero'] as String,
                 style: TextStyle(
-                  color: const Color(0xFFFF5252).withValues(alpha: 0.35),
+                  color: const Color(0xFFFF1E2D).withValues(alpha: 0.35),
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
                   fontFamily: 'monospace',
@@ -2803,7 +3096,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const Text(
                 'SEGURANÇA REAL vs. ILUSÃO DE PROTEÇÃO',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -2831,7 +3124,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
 
                   return Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF161B22),
+                      color: const Color(0xFF111A23),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: const Color(0xFF263238)),
                     ),
@@ -2878,12 +3171,12 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                                   child: Row(
                                     children: [
                                       Icon(Icons.shield,
-                                          color: Color(0xFFFF5252), size: 14),
+                                          color: Color(0xFFFF1E2D), size: 14),
                                       SizedBox(width: 6),
                                       Text(
                                         'TARGET RASTREAMENTO 4G/5G',
                                         style: TextStyle(
-                                          color: Color(0xFFFF5252),
+                                          color: Color(0xFFFF1E2D),
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: 1.2,
@@ -2951,7 +3244,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                                           CrossAxisAlignment.start,
                                       children: [
                                         const Icon(Icons.check_circle,
-                                            color: Color(0xFF00E676), size: 16),
+                                            color: Color(0xFF35D49A), size: 16),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
@@ -3018,7 +3311,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Icon(Icons.check_circle,
-                                          color: Color(0xFF00E676), size: 15),
+                                          color: Color(0xFF35D49A), size: 15),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
@@ -3091,7 +3384,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 width: isDesktop ? 270 : double.infinity,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B22),
+                  color: const Color(0xFF111A23),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFF2C3E50)),
                 ),
@@ -3100,11 +3393,11 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                        color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(s['icone'] as IconData,
-                          color: const Color(0xFFFF5252), size: 24),
+                          color: const Color(0xFFFF1E2D), size: 24),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -3186,7 +3479,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
 
     return Container(
       width: double.infinity,
-      color: const Color(0xFF0C0F13),
+      color: const Color(0xFF0B1117),
       padding: EdgeInsets.symmetric(
           horizontal: isDesktop ? 60 : 20, vertical: 70),
       child: Center(
@@ -3198,7 +3491,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const Text(
                 'TECNOLOGIA PILOT GPS',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -3238,7 +3531,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       return Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF161B22),
+                          color: const Color(0xFF111A23),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: const Color(0xFF263238)),
                         ),
@@ -3248,12 +3541,12 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF5252)
+                                color: const Color(0xFFFF1E2D)
                                     .withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(item['icon'] as IconData,
-                                  color: const Color(0xFFFF5252), size: 20),
+                                  color: const Color(0xFFFF1E2D), size: 20),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -3307,7 +3600,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const Text(
                 'PLANOS & ASSINATURAS',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -3331,7 +3624,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B22),
+                  color: const Color(0xFF111A23),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFF2C3E50)),
                 ),
@@ -3340,7 +3633,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.tune, color: Color(0xFFFF5252), size: 18),
+                        Icon(Icons.tune, color: Color(0xFFFF1E2D), size: 18),
                         SizedBox(width: 8),
                         Text(
                           'Quantos veículos você quer proteger?',
@@ -3465,15 +3758,15 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     return Container(
       padding: EdgeInsets.all(isDesktop ? 24 : 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFFF5252).withValues(alpha: 0.35),
+          color: const Color(0xFFFF1E2D).withValues(alpha: 0.35),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF5252).withValues(alpha: 0.08),
+            color: const Color(0xFFFF1E2D).withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 6),
           ),
@@ -3485,12 +3778,12 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF5252).withValues(alpha: 0.12),
+              color: const Color(0xFFFF1E2D).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.location_on,
-              color: Color(0xFFFF5252),
+              color: Color(0xFFFF1E2D),
               size: 28,
             ),
           ),
@@ -3532,10 +3825,10 @@ class _LandingPageScreenState extends State<LandingPageScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: ativo ? const Color(0xFFFF5252) : const Color(0xFF0F141A),
+          color: ativo ? const Color(0xFFFF1E2D) : const Color(0xFF0F141A),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-              color: ativo ? const Color(0xFFFF5252) : const Color(0xFF263238)),
+              color: ativo ? const Color(0xFFFF1E2D) : const Color(0xFF263238)),
         ),
         child: Text(
           label,
@@ -3563,16 +3856,16 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: destaque ? const Color(0xFFFF5252) : const Color(0xFF263238),
+          color: destaque ? const Color(0xFFFF1E2D) : const Color(0xFF263238),
           width: destaque ? 2 : 1.2,
         ),
         boxShadow: destaque
             ? [
                 BoxShadow(
-                  color: const Color(0xFFFF5252).withValues(alpha: 0.25),
+                  color: const Color(0xFFFF1E2D).withValues(alpha: 0.25),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
@@ -3588,7 +3881,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                 ),
                 child: Center(
                   child: Text(
@@ -3636,7 +3929,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         preco,
                         style: TextStyle(
                           color: destaque
-                              ? const Color(0xFFFF5252)
+                              ? const Color(0xFFFF1E2D)
                               : Colors.white,
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
@@ -3678,13 +3971,13 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                             margin: const EdgeInsets.only(top: 2),
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF5252)
+                              color: const Color(0xFFFF1E2D)
                                   .withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.check,
-                              color: Color(0xFFFF5252),
+                              color: Color(0xFFFF1E2D),
                               size: 14,
                             ),
                           ),
@@ -3710,7 +4003,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: destaque
-                            ? const Color(0xFFFF5252)
+                            ? const Color(0xFFFF1E2D)
                             : const Color(0xFF0F141A),
                         foregroundColor: Colors.white,
                         elevation: destaque ? 4 : 0,
@@ -3786,7 +4079,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               const Text(
                 'DÚVIDAS FREQUENTES',
                 style: TextStyle(
-                  color: Color(0xFFFF5252),
+                  color: Color(0xFFFF1E2D),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -3805,14 +4098,14 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF161B22),
+                    color: const Color(0xFF111A23),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFF263238)),
                   ),
                   child: ExpansionTile(
                     shape: const Border(),
                     collapsedShape: const Border(),
-                    iconColor: const Color(0xFFFF5252),
+                    iconColor: const Color(0xFFFF1E2D),
                     collapsedIconColor: const Color(0xFF9E9E9E),
                     title: Text(
                       item['p']!,
@@ -3847,7 +4140,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   Widget _buildSecaoCtaFinal() {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF0C0F13),
+      color: const Color(0xFF0B1117),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
       child: Center(
         child: ConstrainedBox(
@@ -3855,7 +4148,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           child: Column(
             children: [
               const Icon(Icons.shield_outlined,
-                  color: Color(0xFFFF5252), size: 44),
+                  color: Color(0xFFFF1E2D), size: 44),
               const SizedBox(height: 16),
               const Text(
                 'Proteja seu veículo com tecnologia de verdade',
@@ -3895,14 +4188,14 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0xFFFF5252)),
+                      side: const BorderSide(color: Color(0xFFFF1E2D)),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
                     icon: const Icon(Icons.login,
-                        size: 20, color: Color(0xFFFF5252)),
+                        size: 20, color: Color(0xFFFF1E2D)),
                     label: const Text('Área do Cliente (Login)',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: _irParaLogin,
@@ -3967,7 +4260,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF00E676).withValues(alpha: 0.15),
+              color: const Color(0xFF35D49A).withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Text(notif['icone']!, style: const TextStyle(fontSize: 18)),
@@ -3984,7 +4277,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                     Text(
                       notif['cidade']!,
                       style: const TextStyle(
-                        color: Color(0xFF00E676),
+                        color: Color(0xFF35D49A),
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -4049,59 +4342,4 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   }
 }
 
-// PAINTER DO RADAR MILITAR HOLOGRÁFICO
-class _RadarMilitarPainter extends CustomPainter {
-  final double progress;
 
-  _RadarMilitarPainter(this.progress);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = math.min(size.width, size.height) * 0.45;
-
-    final circlePaint = Paint()
-      ..color = const Color(0xFFFF5252).withValues(alpha: 0.12)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    for (int i = 1; i <= 4; i++) {
-      canvas.drawCircle(center, maxRadius * (i / 4), circlePaint);
-    }
-
-    final crossPaint = Paint()
-      ..color = const Color(0xFFFF5252).withValues(alpha: 0.15)
-      ..strokeWidth = 1.0;
-    canvas.drawLine(Offset(center.dx - maxRadius, center.dy),
-        Offset(center.dx + maxRadius, center.dy), crossPaint);
-    canvas.drawLine(Offset(center.dx, center.dy - maxRadius),
-        Offset(center.dx, center.dy + maxRadius), crossPaint);
-
-    final sweepAngle = progress * 2 * math.pi;
-    final sweepPaint = Paint()
-      ..shader = SweepGradient(
-        startAngle: 0.0,
-        endAngle: math.pi / 2,
-        colors: [
-          Colors.transparent,
-          const Color(0xFFFF5252).withValues(alpha: 0.35),
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: maxRadius))
-      ..style = PaintingStyle.fill;
-
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(sweepAngle);
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset.zero, radius: maxRadius),
-      0,
-      math.pi / 2,
-      true,
-      sweepPaint,
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _RadarMilitarPainter oldDelegate) => true;
-}
