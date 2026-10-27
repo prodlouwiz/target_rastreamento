@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/target_logo.dart';
+import 'emergencia_screen.dart';
 import 'landing_page_screen.dart';
 import 'map_screen.dart';
 
@@ -352,6 +353,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  TextButton.icon(
+                    icon: const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF5252), size: 16),
+                    label: const Text(
+                      '🚨 Central de Bloqueio & Emergência 24h',
+                      style: TextStyle(
+                        color: Color(0xFFFF5252),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const EmergenciaScreen()),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 32),

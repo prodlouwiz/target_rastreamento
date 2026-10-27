@@ -7,7 +7,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/mercosul_plate.dart';
 import '../widgets/target_logo.dart';
+import 'emergencia_screen.dart';
 import 'login_screen.dart';
+import 'orcamento_screen.dart';
+import 'plataforma_web_screen.dart';
 
 class LandingPageScreen extends StatefulWidget {
   const LandingPageScreen({super.key});
@@ -321,14 +324,89 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       _buildNavLink('Como Funciona',
                           () => _rolarParaSecao(_comoFuncionaKey)),
                       _buildNavLink(
-                          'Cercas & Rotas', () => _rolarParaSecao(_cercasKey)),
-                      _buildNavLink('Comparativo',
-                          () => _rolarParaSecao(_comparativoKey)),
-                      _buildNavLink(
                           'Planos', () => _rolarParaSecao(_planosKey)),
+                      _buildNavLink(
+                          'Simular Cotação',
+                          () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const OrcamentoScreen()),
+                              )),
                       _buildNavLink('FAQ', () => _rolarParaSecao(_faqKey)),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: 10),
                     ],
+
+                    // Botão Emergência 24h
+                    IconButton(
+                      tooltip: 'Central de Emergência e Bloqueio 24h',
+                      icon: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: const Color(0xFFFF5252).withValues(alpha: 0.6)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.warning_amber_rounded,
+                                color: Color(0xFFFF5252), size: 14),
+                            if (isDesktop) ...[
+                              const SizedBox(width: 4),
+                              const Text(
+                                'Emergência 24h',
+                                style: TextStyle(
+                                  color: Color(0xFFFF5252),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const EmergenciaScreen()),
+                      ),
+                    ),
+
+                    const SizedBox(width: 6),
+
+                    // Botão Plataforma Web Desktop (Demo)
+                    if (isDesktop)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF161B22),
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(
+                              color: Color(0xFF00E5FF), width: 1.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.desktop_windows,
+                            size: 15, color: Color(0xFF00E5FF)),
+                        label: const Text(
+                          'Plataforma Web',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF00E5FF),
+                          ),
+                        ),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const PlataformaWebScreen()),
+                        ),
+                      ),
+
+                    const SizedBox(width: 8),
 
                     // Botão Login
                     OutlinedButton.icon(
@@ -653,6 +731,59 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: const BorderSide(
+                              color: Color(0xFF00E5FF), width: 1.4),
+                          backgroundColor: const Color(0xFF161B22),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 18),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.desktop_windows,
+                            size: 20, color: Color(0xFF00E5FF)),
+                        label: const Text(
+                          'Plataforma Web (PC)',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF00E5FF),
+                          ),
+                        ),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const PlataformaWebScreen()),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(
+                              color: Color(0xFFFFB300), width: 1.2),
+                          backgroundColor: const Color(0xFF161B22),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 22, vertical: 18),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.calculate_outlined,
+                            size: 20, color: Color(0xFFFFB300)),
+                        label: const Text(
+                          'Simular Orçamento',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFFB300)),
+                        ),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const OrcamentoScreen()),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(
                               color: Color(0xFF2C2C2C), width: 1.2),
                           backgroundColor: const Color(0xFF1E1E1E),
                           padding: const EdgeInsets.symmetric(
@@ -828,7 +959,89 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
+
+              // Alternador de Visão: Smartphone vs. Computador Desktop
+              Container(
+                margin: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161B22),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2C3E50)),
+                ),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF5252),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.phone_iphone,
+                              color: Colors.white, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            '📱 Visão Smartphone (App Mobile)',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const PlataformaWebScreen()),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F141A),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: const Color(0xFF00E5FF)
+                                  .withValues(alpha: 0.6)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.desktop_windows,
+                                color: Color(0xFF00E5FF), size: 16),
+                            SizedBox(width: 8),
+                            Text(
+                              '💻 Abrir Central Web no Computador (Tela Cheia)',
+                              style: TextStyle(
+                                color: Color(0xFF00E5FF),
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(width: 6),
+                            Icon(Icons.open_in_new,
+                                color: Color(0xFF00E5FF), size: 14),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               // Seletor de Tipo de Veículo
               Container(
