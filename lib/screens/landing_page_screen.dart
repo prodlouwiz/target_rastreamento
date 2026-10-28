@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -22,7 +22,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _planosKey = GlobalKey();
-  final GlobalKey _recursosKey = GlobalKey();
   final GlobalKey _cercasKey = GlobalKey();
   final GlobalKey _relatoriosKey = GlobalKey();
   final GlobalKey _simuladorKey = GlobalKey();
@@ -378,41 +377,40 @@ class _LandingPageScreenState extends State<LandingPageScreen>
 
                     const SizedBox(width: 8),
 
-                    // Botão Login
+                    // Botão Área do Cliente (Estilo Contornado Sóbrio)
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(
-                            color: Color(0xFFFF1E2D), width: 1.2),
-                        backgroundColor: const Color(0xFF1E1E1E),
+                        foregroundColor: TargetColors.textWhite,
+                        side: const BorderSide(color: TargetColors.line, width: 1.2),
+                        backgroundColor: TargetColors.panel,
                         padding: EdgeInsets.symmetric(
-                            horizontal: isDesktop ? 18 : 12, vertical: 12),
+                            horizontal: isDesktop ? 16 : 10, vertical: 12),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
-                      icon: const Icon(Icons.login,
-                          size: 16, color: Color(0xFFFF1E2D)),
+                      icon: const Icon(Icons.person_outline,
+                          size: 16, color: TargetColors.textWhite),
                       label: Text(
                         isDesktop ? 'Área do Cliente' : 'Login',
                         style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.bold),
+                            fontSize: 12.5, fontWeight: FontWeight.bold),
                       ),
                       onPressed: _irParaLogin,
                     ),
 
                     const SizedBox(width: 10),
 
-                    // Botão WhatsApp
+                    // Botão WhatsApp Oficial (Vermelho Target de Ação)
                     if (!isTablet && !isDesktop)
                       IconButton(
-                        icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
+                        icon: const Icon(Icons.chat, color: TargetColors.red),
                         tooltip: 'WhatsApp',
                         onPressed: () => _abrirWhatsApp(),
                       )
                     else
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF25D366),
+                          backgroundColor: TargetColors.red,
                           foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(
@@ -420,7 +418,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                         ),
-                        icon: const Icon(Icons.chat, size: 18),
+                        icon: const Icon(Icons.chat, size: 16),
                         label: const Text(
                           'Falar no WhatsApp',
                           style: TextStyle(
@@ -437,76 +435,70 @@ class _LandingPageScreenState extends State<LandingPageScreen>
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    // HERO SECTION OFICIAL DO BRANDING BOOK (LAYOUT EM 2 COLUNAS)
+                    // 1. HERO SECTION OFICIAL DO BRANDING BOOK (LAYOUT EM 2 COLUNAS)
                     _buildHeroSection(isDesktop),
 
-                    // BARRA DE CATEGORIAS PROFISSIONAIS
-                    _buildCategoriasBar(isDesktop),
+                    // 2. FAIXA DE BENEFÍCIOS (5 ITENS HORIZONTAIS OFICIAIS)
+                    _buildFaixaBeneficios(isDesktop),
 
-                    // TRUST BAR REALISTA
-                    _buildTrustBar(isDesktop),
+                    // 3. NOSSAS SOLUÇÕES (SEÇÃO CONTRASTE BRANCO COM 5 CARDS AUTOMOTIVOS)
+                    _buildSecaoNossasSolucoes(isDesktop),
 
-                    // SIMULADOR INTERATIVO COM MAPA REAL DE MACAÉ / RIO DAS OSTRAS
+                    // 4. POR QUE ESCOLHER O TARGET? (CABINE DO MOTORISTA + 6 RECURSOS)
+                    _buildSecaoPorQueEscolherTarget(isDesktop),
+
+                    // 5. SIMULADOR INTERATIVO COM MAPA REAL DE MACAÉ / RIO DAS OSTRAS
                     Container(
                       key: _simuladorKey,
                       child: _buildSecaoSimuladorInterativo(isDesktop),
                     ),
 
-                    // NOVA SEÇÃO: COBERTURA 4G/5G MULTI-OPERADORA
-                    Container(
-                      key: _coberturaKey,
-                      child: _buildSecaoCobertura4G5G(isDesktop),
-                    ),
-
-                    // NOVA SEÇÃO: COMO FUNCIONA (3 PASSOS)
-                    Container(
-                      key: _comoFuncionaKey,
-                      child: _buildSecaoComoFunciona(isDesktop),
-                    ),
-
-                    // SEÇÃO DE DESTAQUE: CERCAS VIRTUAIS
+                    // 6. SEÇÃO DE DESTAQUE: CERCAS VIRTUAIS
                     Container(
                       key: _cercasKey,
                       child: _buildSecaoCercasVirtuais(isDesktop),
                     ),
 
-                    // SEÇÃO DE DESTAQUE: RELATÓRIOS E TELEMETRIA
+                    // 7. SEÇÃO DE DESTAQUE: RELATÓRIOS E TELEMETRIA
                     Container(
                       key: _relatoriosKey,
                       child: _buildSecaoRelatorios(isDesktop),
                     ),
 
-                    // NOVA SEÇÃO: COMPARATIVO TARGET 4G vs RASTREADOR 2G
+                    // 8. COBERTURA 4G/5G MULTI-OPERADORA
+                    Container(
+                      key: _coberturaKey,
+                      child: _buildSecaoCobertura4G5G(isDesktop),
+                    ),
+
+                    // 9. COMO FUNCIONA (3 PASSOS)
+                    Container(
+                      key: _comoFuncionaKey,
+                      child: _buildSecaoComoFunciona(isDesktop),
+                    ),
+
+                    // 10. COMPARATIVO TARGET 4G vs RASTREADOR 2G
                     Container(
                       key: _comparativoKey,
                       child: _buildSecaoComparativo(isDesktop),
                     ),
 
-                    // SELOS DE TECNOLOGIA E HOMOLOGAÇÃO
-                    _buildSelosAutoridade(isDesktop),
-
-                    // SEÇÃO: PRINCIPAIS RECURSOS
-                    Container(
-                      key: _recursosKey,
-                      child: _buildSecaoRecursos(isDesktop),
-                    ),
-
-                    // TABELA DE PLANOS COM SELETOR DE VEÍCULOS
+                    // 11. TABELA DE PLANOS COM SELETOR DE VEÍCULOS
                     Container(
                       key: _planosKey,
                       child: _buildSecaoPlanosComSeletor(isDesktop),
                     ),
 
-                    // FAQ
+                    // 12. BANNER PRÉ-FOOTER (JÁ SÃO MAIS DE 10.000 VEÍCULOS PROTEGIDOS)
+                    _buildPreFooterBanner(isDesktop),
+
+                    // 13. FAQ
                     Container(
                       key: _faqKey,
                       child: _buildSecaoFaq(isDesktop),
                     ),
 
-                    // CTA FINAL
-                    _buildSecaoCtaFinal(),
-
-                    // FOOTER
+                    // 14. FOOTER INSTITUCIONAL
                     _buildFooter(),
                   ],
                 ),
@@ -532,7 +524,19 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   Widget _buildHeroSection(bool isDesktop) {
     return Container(
       width: double.infinity,
-      color: TargetColors.darkBg, // #0B1117 (Preto Grafite)
+      decoration: BoxDecoration(
+        color: TargetColors.darkBg, // #0B1117 (Preto Grafite)
+        image: DecorationImage(
+          image: const NetworkImage(
+            'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=1600&q=80',
+          ),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            TargetColors.darkBg.withValues(alpha: 0.90),
+            BlendMode.darken,
+          ),
+        ),
+      ),
       padding: EdgeInsets.symmetric(
         horizontal: isDesktop ? 60 : 20,
         vertical: isDesktop ? 70 : 40,
@@ -549,11 +553,12 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                       flex: 6,
                       child: _buildHeroConteudoTexto(isDesktop),
                     ),
-                    const SizedBox(width: 50),
-                    // Coluna Direita: Mockup Realista de Smartphone do App
+                    const SizedBox(width: 40),
+                    // Coluna Direita: Mockup Realista de Smartphone do App + Card Flutuante
                     Expanded(
-                      flex: 5,
-                      child: Center(child: _buildHeroMockupSmartphoneRealista()),
+                      flex: 6,
+                      child: Center(
+                          child: _buildHeroMockupSmartphoneRealista(isDesktop)),
                     ),
                   ],
                 )
@@ -562,7 +567,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   children: [
                     _buildHeroConteudoTexto(isDesktop),
                     const SizedBox(height: 40),
-                    _buildHeroMockupSmartphoneRealista(),
+                    _buildHeroMockupSmartphoneRealista(isDesktop),
                   ],
                 ),
         ),
@@ -581,15 +586,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
           mainAxisAlignment:
               isDesktop ? MainAxisAlignment.start : MainAxisAlignment.center,
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: TargetColors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 8),
             const Text(
               'RASTREAMENTO VEICULAR',
               style: TextStyle(
@@ -600,21 +596,33 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 letterSpacing: 2.0,
               ),
             ),
+            const SizedBox(width: 8),
+            Container(width: 24, height: 2, color: TargetColors.red),
           ],
         ),
         const SizedBox(height: 16),
 
         // Título Principal Oficial (Branding Book)
-        Text(
-          'Seu veículo sempre\nsob controle.',
+        RichText(
           textAlign: isDesktop ? TextAlign.left : TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: isDesktop ? 48 : 34,
-            fontWeight: FontWeight.w900,
-            color: TargetColors.textWhite,
-            height: 1.12,
-            letterSpacing: -0.8,
+          text: TextSpan(
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: isDesktop ? 46 : 32,
+              fontWeight: FontWeight.w900,
+              height: 1.14,
+              letterSpacing: -0.8,
+            ),
+            children: const [
+              TextSpan(
+                text: 'Mais controle\n',
+                style: TextStyle(color: TargetColors.textWhite),
+              ),
+              TextSpan(
+                text: 'para o seu caminho.',
+                style: TextStyle(color: TargetColors.red),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 18),
@@ -623,12 +631,12 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
           child: Text(
-            'Acompanhe seu veículo em tempo real, consulte trajetos e tenha mais controle na rotina com uma plataforma simples e suporte próximo.',
+            'Tecnologia, segurança e acompanhamento em tempo real para o seu carro, moto, frota ou veículo de trabalho. Com o Target, você tem tudo na palma da mão.',
             textAlign: isDesktop ? TextAlign.left : TextAlign.center,
             style: const TextStyle(
               fontFamily: 'Inter',
               color: TargetColors.textMuted,
-              fontSize: 16,
+              fontSize: 15.5,
               height: 1.55,
             ),
           ),
@@ -665,27 +673,27 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   'Olá! Gostaria de falar com um especialista sobre o rastreamento da Target.'),
             ),
 
-            // Botão Secundário (#111A23 com borda #26313D) - Ver Planos e Preços
+            // Botão Secundário (#111A23 com borda #26313D) - Ver como funciona
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: TargetColors.textWhite,
                 side: const BorderSide(color: TargetColors.line, width: 1.2),
-                backgroundColor: TargetColors.panel,
+                backgroundColor: TargetColors.panel.withValues(alpha: 0.6),
                 padding: const EdgeInsets.symmetric(
                     horizontal: 20, vertical: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
-              icon: const Icon(Icons.tune, size: 18, color: TargetColors.textMuted),
+              icon: const Icon(Icons.play_arrow, size: 18, color: TargetColors.textWhite),
               label: const Text(
-                'Ver Planos e Preços',
+                'Ver como funciona',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: TargetColors.textWhite,
                 ),
               ),
-              onPressed: () => _rolarParaSecao(_planosKey),
+              onPressed: () => _rolarParaSecao(_comoFuncionaKey),
             ),
 
             // Botão Plataforma Web (PC)
@@ -744,322 +752,478 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- MOCKUP REALISTA DO SMARTPHONE NO HERO ---
-  Widget _buildHeroMockupSmartphoneRealista() {
-    final pontoAtual = const LatLng(-22.504771, -41.920289); // Rio das Ostras / Macaé
+  // --- MOCKUP REALISTA DO SMARTPHONE NO HERO COM CARD DE TELEMETRIA ---
+  Widget _buildHeroMockupSmartphoneRealista([bool isDesktop = true]) {
+    const pontoAtual = LatLng(-22.504771, -41.920289); // Rio das Ostras / Macaé
+
+    final cardTelemetria = Container(
+      width: 220,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: TargetColors.panel.withValues(alpha: 0.95), // #111A23
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: TargetColors.line, width: 1.2), // #26313D
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black87,
+            blurRadius: 28,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: TargetColors.green,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Veículo em movimento',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  color: TargetColors.textWhite,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          const Padding(
+            padding: EdgeInsets.only(left: 16),
+            child: Text(
+              'Atualizado há 2 min',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                color: TargetColors.textMuted,
+                fontSize: 10,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: TargetColors.line, height: 1),
+          const SizedBox(height: 12),
+          _buildItemTelemetriaFlutuante(
+            icone: Icons.speed,
+            rotulo: 'Velocidade',
+            valor: _motorBloqueado ? '0 km/h' : '68 km/h',
+          ),
+          const SizedBox(height: 10),
+          _buildItemTelemetriaFlutuante(
+            icone: Icons.location_on_outlined,
+            rotulo: 'Endereço',
+            valor: 'BR-101 - Rio das Ostras/RJ',
+          ),
+          const SizedBox(height: 10),
+          _buildItemTelemetriaFlutuante(
+            icone: Icons.battery_charging_full,
+            rotulo: 'Bateria',
+            valor: '12.6 V',
+          ),
+        ],
+      ),
+    );
+
+    final smartphone = Container(
+      width: 300,
+      height: 550,
+      decoration: BoxDecoration(
+        color: TargetColors.panel, // #111A23
+        borderRadius: BorderRadius.circular(34),
+        border: Border.all(color: TargetColors.line, width: 2), // #26313D
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black87,
+            blurRadius: 36,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: Stack(
+          children: [
+            // 1. MAPA DO APLICATIVO EM MODO NOTURNO COM ROTA VERMELHA
+            Positioned.fill(
+              child: FlutterMap(
+                options: const MapOptions(
+                  initialCenter: pontoAtual,
+                  initialZoom: 15.2,
+                  interactionOptions: InteractionOptions(
+                    flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                  ),
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.target.rastreamento',
+                    tileBuilder: darkModeTileBuilder,
+                  ),
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: const [
+                          LatLng(-22.5180, -41.9320),
+                          LatLng(-22.5120, -41.9280),
+                          LatLng(-22.5080, -41.9240),
+                          LatLng(-22.504771, -41.920289),
+                        ],
+                        strokeWidth: 3.5,
+                        color: TargetColors.red,
+                      ),
+                    ],
+                  ),
+                  // Marcador do Veículo
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: pontoAtual,
+                        width: 80,
+                        height: 70,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: TargetColors.panel,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                    color: TargetColors.line),
+                              ),
+                              child: const Text(
+                                'BRA2E19',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: _motorBloqueado
+                                    ? TargetColors.red
+                                    : const Color(0xFF1E2D3D),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: Colors.white, width: 2),
+                                boxShadow: const [
+                                  BoxShadow(
+                                      color: Colors.black54,
+                                      blurRadius: 6),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.directions_car,
+                                color: Colors.white,
+                                size: 17,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // 2. TOP BAR DO SMARTPHONE (NOTCH + STATUS)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      TargetColors.darkBg.withValues(alpha: 0.95),
+                      TargetColors.darkBg.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 70,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: TargetColors.darkBg,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const TargetLogoHorizontal(
+                          iconSize: 18,
+                          compact: true,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: TargetColors.panel,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: TargetColors.line),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: _motorBloqueado
+                                      ? TargetColors.red
+                                      : TargetColors.green,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                _motorBloqueado ? 'BLOQUEADO' : '4G ONLINE',
+                                style: TextStyle(
+                                  color: _motorBloqueado
+                                      ? TargetColors.red
+                                      : TargetColors.green,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 3. CARD INFERIOR REALISTA: VEÍCULO + BOTÃO DIRETO DE BLOQUEIO DE MOTOR
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: 14,
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: TargetColors.panelAlt.withValues(alpha: 0.96), // #151F2A
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: TargetColors.line, width: 1.2), // #26313D
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black87,
+                      blurRadius: 18,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Toyota Corolla XEi',
+                              style: TextStyle(
+                                color: TargetColors.textWhite,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Av. Brasília, Costazul · Rio das Ostras',
+                              style: TextStyle(
+                                color: TargetColors.textMuted,
+                                fontSize: 9.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const MercosulPlate(
+                          plate: 'BRA2E19',
+                          height: 20,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: _motorBloqueado
+                                ? TargetColors.red
+                                : TargetColors.green,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          _motorBloqueado
+                              ? 'IGNIÇÃO CORTADA'
+                              : 'IGNIÇÃO LIGADA · 68 km/h',
+                          style: TextStyle(
+                            color: _motorBloqueado
+                                ? TargetColors.red
+                                : TargetColors.green,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 38,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _motorBloqueado
+                              ? TargetColors.green
+                              : TargetColors.red, // #FF1E2D
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        icon: Icon(
+                          _motorBloqueado ? Icons.lock_open : Icons.lock,
+                          size: 14,
+                        ),
+                        label: Text(
+                          _motorBloqueado
+                              ? 'REATIVAR MOTOR'
+                              : 'BLOQUEAR MOTOR',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        onPressed: _executarToggleBloqueioHero,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 320,
-          height: 560,
-          decoration: BoxDecoration(
-            color: TargetColors.panel, // #111A23
-            borderRadius: BorderRadius.circular(34),
-            border: Border.all(color: TargetColors.line, width: 2), // #26313D
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black87,
-                blurRadius: 36,
-                offset: Offset(0, 14),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(32),
+        if (isDesktop)
+          Padding(
+            padding: const EdgeInsets.only(left: 60),
             child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
               children: [
-                // 1. MAPA DO APLICATIVO EM MODO NOTURNO REAL
-                Positioned.fill(
-                  child: FlutterMap(
-                    options: MapOptions(
-                      initialCenter: pontoAtual,
-                      initialZoom: 15.5,
-                      interactionOptions: const InteractionOptions(
-                        flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-                      ),
-                    ),
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.target.rastreamento',
-                        tileBuilder: darkModeTileBuilder,
-                      ),
-                      // Marcador do Veículo
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: pontoAtual,
-                            width: 80,
-                            height: 70,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: TargetColors.panel,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                        color: TargetColors.line),
-                                  ),
-                                  child: const Text(
-                                    'BRA2E19',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: _motorBloqueado
-                                        ? TargetColors.red
-                                        : const Color(0xFF1E2D3D),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: Colors.white, width: 2),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                          color: Colors.black54,
-                                          blurRadius: 6),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.directions_car,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 2. TOP BAR DO SMARTPHONE (NOTCH + STATUS)
+                smartphone,
                 Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          TargetColors.darkBg.withValues(alpha: 0.95),
-                          TargetColors.darkBg.withValues(alpha: 0.0),
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        // Notch
-                        Center(
-                          child: Container(
-                            width: 70,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: TargetColors.darkBg,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Status Bar Interna
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const TargetLogoHorizontal(
-                              iconSize: 20,
-                              compact: true,
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: TargetColors.panel,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                    color: TargetColors.line),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: _motorBloqueado
-                                          ? TargetColors.red
-                                          : TargetColors.green,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    _motorBloqueado ? 'BLOQUEADO' : '4G ONLINE',
-                                    style: TextStyle(
-                                      color: _motorBloqueado
-                                          ? TargetColors.red
-                                          : TargetColors.green,
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // 3. CARD INFERIOR REALISTA: VEÍCULO + BOTÃO DIRETO DE BLOQUEIO DE MOTOR
-                Positioned(
-                  left: 14,
-                  right: 14,
-                  bottom: 14,
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: TargetColors.panelAlt.withValues(alpha: 0.96), // #151F2A
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: TargetColors.line, width: 1.2), // #26313D
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black87,
-                          blurRadius: 18,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Identificação do Veículo
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Toyota Corolla XEi',
-                                  style: TextStyle(
-                                    color: TargetColors.textWhite,
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Av. Brasília, Costazul · Rio das Ostras',
-                                  style: TextStyle(
-                                    color: TargetColors.textMuted,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const MercosulPlate(
-                              plate: 'BRA2E19',
-                              height: 22,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Métricas Rápidas (Ignição e Velocidade)
-                        Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: _motorBloqueado
-                                    ? TargetColors.red
-                                    : TargetColors.green,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _motorBloqueado
-                                  ? 'IGNIÇÃO CORTADA'
-                                  : 'IGNIÇÃO LIGADA · 58 km/h',
-                              style: TextStyle(
-                                color: _motorBloqueado
-                                    ? TargetColors.red
-                                    : TargetColors.green,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        // BOTÃO DIRETO: BLOQUEAR MOTOR (#FF1E2D)
-                        SizedBox(
-                          height: 40,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _motorBloqueado
-                                  ? TargetColors.green
-                                  : TargetColors.red, // #FF1E2D
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            icon: Icon(
-                              _motorBloqueado ? Icons.lock_open : Icons.lock,
-                              size: 15,
-                            ),
-                            label: Text(
-                              _motorBloqueado
-                                  ? 'REATIVAR MOTOR'
-                                  : 'BLOQUEAR MOTOR',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            onPressed: _executarToggleBloqueioHero,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  left: -80,
+                  top: 50,
+                  child: cardTelemetria,
                 ),
               ],
             ),
+          )
+        else
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              cardTelemetria,
+              const SizedBox(height: 20),
+              smartphone,
+            ],
           ),
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         const Text(
           '◉ Interface real do aplicativo · Simulação interativa',
           style: TextStyle(
             color: Color(0xFF647180),
             fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemTelemetriaFlutuante({
+    required IconData icone,
+    required String rotulo,
+    required String valor,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: TargetColors.panelAlt,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: TargetColors.line),
+          ),
+          child: Icon(icone, size: 14, color: TargetColors.textWhite),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                rotulo,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  color: TargetColors.textMuted,
+                  fontSize: 10,
+                ),
+              ),
+              Text(
+                valor,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  color: TargetColors.textWhite,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -1104,101 +1268,751 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- 2. BARRA DE CATEGORIAS PROFISSIONAIS ---
-  Widget _buildCategoriasBar(bool isDesktop) {
-    final categorias = [
-      {'icon': Icons.directions_car, 'nome': 'Carros Particulares'},
-      {'icon': Icons.two_wheeler, 'nome': 'Motos'},
-      {'icon': Icons.local_shipping, 'nome': 'Caminhões & Vans'},
-      {'icon': Icons.apartment, 'nome': 'Frotas Corporativas'},
-      {'icon': Icons.agriculture, 'nome': 'Máquinas & Maquinários'},
-      {'icon': Icons.storefront, 'nome': 'Empresas & Logística'},
+  // --- 2. FAIXA DE BENEFÍCIOS (5 ITENS HORIZONTAIS OFICIAIS) ---
+  Widget _buildFaixaBeneficios(bool isDesktop) {
+    final itens = [
+      {
+        'icone': Icons.verified_user_outlined,
+        'titulo': 'Cobertura 4G/5G',
+        'subtitulo': 'Conexão em todo o Brasil',
+      },
+      {
+        'icone': Icons.build_circle_outlined,
+        'titulo': 'Instalação profissional',
+        'subtitulo': 'Rápida e segura',
+      },
+      {
+        'icone': Icons.headset_mic_outlined,
+        'titulo': 'Suporte humanizado',
+        'subtitulo': 'Via WhatsApp e telefone',
+      },
+      {
+        'icone': Icons.devices_outlined,
+        'titulo': 'Plataforma moderna',
+        'subtitulo': 'No celular e no computador',
+      },
+      {
+        'icone': Icons.lock_outline,
+        'titulo': 'Planos sob medida',
+        'subtitulo': 'Para você ou sua frota',
+      },
     ];
 
     return Container(
       width: double.infinity,
-      color: const Color(0xFF090B0E),
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      decoration: const BoxDecoration(
+        color: TargetColors.darkBg, // #0B1117
+        border: Border.symmetric(
+          horizontal: BorderSide(color: TargetColors.panelAlt, width: 1.5),
+        ),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 60 : 20,
+        vertical: 26,
+      ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
-          child: Wrap(
-            spacing: isDesktop ? 36 : 18,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: categorias.map((c) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(c['icon'] as IconData,
-                      color: const Color(0xFFFF1E2D), size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    c['nome'] as String,
-                    style: const TextStyle(
-                      color: Color(0xFFB0BEC5),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: isDesktop
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: itens.map((item) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: _buildItemFaixaBeneficio(item),
+                      ),
+                    );
+                  }).toList(),
+                )
+              : Wrap(
+                  spacing: 16,
+                  runSpacing: 18,
+                  alignment: WrapAlignment.center,
+                  children: itens.map((item) {
+                    return SizedBox(
+                      width: 280,
+                      child: _buildItemFaixaBeneficio(item),
+                    );
+                  }).toList(),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItemFaixaBeneficio(Map<String, dynamic> item) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: TargetColors.red.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: TargetColors.red.withValues(alpha: 0.6),
+              width: 1.5,
+            ),
+          ),
+          child: Icon(
+            item['icone'] as IconData,
+            color: TargetColors.red,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                item['titulo'] as String,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  color: TargetColors.textWhite,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                item['subtitulo'] as String,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  color: TargetColors.textMuted,
+                  fontSize: 11.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- 3. NOSSAS SOLUÇÕES (CONTRASTE BRANCO COM 5 CARDS AUTOMOTIVOS) ---
+  Widget _buildSecaoNossasSolucoes(bool isDesktop) {
+    final solucoes = [
+      {
+        'titulo': 'Carros e Motos',
+        'subtitulo': 'Mais segurança para você e sua família.',
+        'imagem':
+            'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80',
+        'icone': Icons.directions_car,
+        'msg': 'Olá! Gostaria de saber mais sobre o rastreamento para Carros e Motos.',
+      },
+      {
+        'titulo': 'Caminhões e Vans',
+        'subtitulo': 'Controle total da sua carga e do seu patrimônio.',
+        'imagem':
+            'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=600&q=80',
+        'icone': Icons.local_shipping,
+        'msg': 'Olá! Gostaria de saber mais sobre o rastreamento para Caminhões e Vans.',
+      },
+      {
+        'titulo': 'Máquinas e Equipamentos',
+        'subtitulo': 'Proteja o que mantém o seu negócio girando.',
+        'imagem':
+            'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=600&q=80',
+        'icone': Icons.agriculture,
+        'msg': 'Olá! Gostaria de saber mais sobre rastreamento de Máquinas e Equipamentos.',
+      },
+      {
+        'titulo': 'Frotas Corporativas',
+        'subtitulo': 'Gestão eficiente e relatórios para sua operação.',
+        'imagem':
+            'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80',
+        'icone': Icons.commute,
+        'msg': 'Olá! Gostaria de uma proposta para Gestão de Frota Corporativa.',
+      },
+      {
+        'titulo': 'Empresas e Logística',
+        'subtitulo': 'Soluções personalizadas para o seu setor.',
+        'imagem':
+            'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=600&q=80',
+        'icone': Icons.storefront,
+        'msg': 'Olá! Gostaria de uma solução personalizada para minha empresa de logística.',
+      },
+    ];
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFFFFFFF), // Fundo Branco de Alto Contraste (Oficial da Imagem)
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 60 : 20,
+        vertical: isDesktop ? 70 : 45,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Cabeçalho da Seção
+              isDesktop
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          flex: 7,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(width: 20, height: 2, color: TargetColors.red),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'NOSSAS SOLUÇÕES',
+                                    style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      color: TargetColors.red,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.8,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Do seu carro à sua frota,\ntemos a solução ideal.',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  color: Color(0xFF0B1117),
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.15,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'Somos especialistas em rastreamento veicular com foco em segurança, controle e praticidade. Escolha o plano ideal para a sua necessidade.',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  color: Color(0xFF64748B),
+                                  fontSize: 14.5,
+                                  height: 1.45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _rolarParaSecao(_planosKey),
+                          child: const Padding(
+                            padding: EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Conheça todos os planos',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    color: Color(0xFF0B1117),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 6),
+                                Icon(Icons.arrow_forward,
+                                    color: TargetColors.red, size: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(width: 20, height: 2, color: TargetColors.red),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'NOSSAS SOLUÇÕES',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                color: TargetColors.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Do seu carro à sua frota, temos a solução ideal.',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            color: Color(0xFF0B1117),
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Somos especialistas em rastreamento veicular com foco em segurança, controle e praticidade. Escolha o plano ideal para a sua necessidade.',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            color: Color(0xFF64748B),
+                            fontSize: 13.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: () => _rolarParaSecao(_planosKey),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Conheça todos os planos',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  color: Color(0xFF0B1117),
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.arrow_forward,
+                                  color: TargetColors.red, size: 15),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              );
-            }).toList(),
+
+              const SizedBox(height: 36),
+
+              // Grade / Linha com os 5 Cards de Veículos
+              isDesktop
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: solucoes.map((s) {
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: _buildCardSolucaoVeiculo(s),
+                          ),
+                        );
+                      }).toList(),
+                    )
+                  : SizedBox(
+                      height: 350,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: solucoes.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 14),
+                        itemBuilder: (context, index) {
+                          return SizedBox(
+                            width: 240,
+                            child: _buildCardSolucaoVeiculo(solucoes[index]),
+                          );
+                        },
+                      ),
+                    ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // --- 3. TRUST BAR (REALISTA E SÓLIDA) ---
-  Widget _buildTrustBar(bool isDesktop) {
-    final itens = [
+  Widget _buildCardSolucaoVeiculo(Map<String, dynamic> solucao) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Imagem do Veículo com Badge Flutuante
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(15)),
+                child: Image.network(
+                  solucao['imagem'] as String,
+                  height: 140,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 140,
+                    color: const Color(0xFF151F2A),
+                    child: Center(
+                      child: Icon(
+                        solucao['icone'] as IconData,
+                        size: 40,
+                        color: Colors.white30,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Ícone Circular Dark com Borda
+              Positioned(
+                bottom: -18,
+                left: 16,
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111A23),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    solucao['icone'] as IconData,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Textos e Ação
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  solucao['titulo'] as String,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    color: Color(0xFF0B1117),
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  solucao['subtitulo'] as String,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    color: Color(0xFF64748B),
+                    fontSize: 12.5,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () => _abrirWhatsApp(solucao['msg'] as String),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Saiba mais',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          color: TargetColors.red,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward,
+                          color: TargetColors.red, size: 14),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 4. POR QUE ESCOLHER O TARGET? (CABINE DO MOTORISTA + 6 RECURSOS) ---
+  Widget _buildSecaoPorQueEscolherTarget(bool isDesktop) {
+    final recursos = [
       {
-        'icon': Icons.cell_tower,
-        'texto': 'Cobertura 4G & 5G com Roaming Triplo (Vivo, Claro e TIM)'
+        'icone': Icons.verified_user_outlined,
+        'titulo': 'Acesso em tempo real',
+        'desc': 'Saiba onde seu veículo está a qualquer momento.',
       },
-      {'icon': Icons.fence_outlined, 'texto': 'Cercas Virtuais com Avisos no WhatsApp'},
-      {'icon': Icons.description_outlined, 'texto': 'Relatórios de Km e Horímetro'},
-      {'icon': Icons.lock_outline, 'texto': 'Bloqueio Remoto Antifurto'},
-      {'icon': Icons.history, 'texto': 'Histórico Completo de Trajetos'},
       {
-        'icon': Icons.support_agent,
-        'texto': 'Suporte Humanizado (22) 99769-4019'
+        'icone': Icons.power_settings_new,
+        'titulo': 'Bloqueio remoto',
+        'desc': 'Mais proteção contra furtos e roubos.',
+      },
+      {
+        'icone': Icons.alt_route,
+        'titulo': 'Histórico de rotas',
+        'desc': 'Com relatórios completos de trajetos.',
+      },
+      {
+        'icone': Icons.layers_outlined,
+        'titulo': 'Planos flexíveis',
+        'desc': 'Do individual à sua frota corporativa.',
+      },
+      {
+        'icone': Icons.notifications_active_outlined,
+        'titulo': 'Alertas inteligentes',
+        'desc': 'Velocidade, cerca, ignição e muito mais.',
+      },
+      {
+        'icone': Icons.headset_mic_outlined,
+        'titulo': 'Suporte especializado',
+        'desc': 'Atendimento humanizado sempre ao seu lado.',
       },
     ];
 
     return Container(
       width: double.infinity,
-      color: const Color(0xFF11151C),
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+      color: TargetColors.darkBg, // #0B1117
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 60 : 20,
+        vertical: isDesktop ? 80 : 50,
+      ),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1240),
-          child: Wrap(
-            spacing: isDesktop ? 32 : 16,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: itens.map((item) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(item['icon'] as IconData,
-                      color: const Color(0xFFFF1E2D), size: 17),
-                  const SizedBox(width: 8),
-                  Text(
-                    item['texto'] as String,
-                    style: const TextStyle(
-                      color: Color(0xFFCCCCCC),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+          child: isDesktop
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Coluna Esquerda: Foto do Motorista na Cabine com Script Overlay
+                    Expanded(
+                      flex: 5,
+                      child: _buildFotoCabineMotorista(),
                     ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
+                    const SizedBox(width: 50),
+                    // Coluna Direita: Cabeçalho + Grade 2x3 dos 6 Recursos
+                    Expanded(
+                      flex: 7,
+                      child: _buildConteudoPorQueEscolher(recursos),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildFotoCabineMotorista(),
+                    const SizedBox(height: 36),
+                    _buildConteudoPorQueEscolher(recursos),
+                  ],
+                ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFotoCabineMotorista() {
+    return Container(
+      height: 440,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: TargetColors.line, width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black87,
+            blurRadius: 28,
+            offset: Offset(0, 10),
+          ),
+        ],
+        image: const DecorationImage(
+          image: NetworkImage(
+            'https://images.unsplash.com/photo-1508974239320-0a029497e820?auto=format&fit=crop&w=900&q=80',
+          ),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Gradiente Escuro na base da foto para contraste do texto
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.15),
+                    Colors.black.withValues(alpha: 0.85),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Frase Script no rodapé da imagem (Exatamente como no design)
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 24,
+            child: Text(
+              'Seu veículo\nsempre seguro,\nem qualquer\nlugar.',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontStyle: FontStyle.italic,
+                color: Colors.white.withValues(alpha: 0.95),
+                fontSize: 26,
+                fontWeight: FontWeight.w400,
+                height: 1.2,
+                shadows: const [
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConteudoPorQueEscolher(List<Map<String, dynamic>> recursos) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(width: 20, height: 2, color: TargetColors.red),
+            const SizedBox(width: 8),
+            const Text(
+              'POR QUE ESCOLHER O TARGET?',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                color: TargetColors.red,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.8,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        RichText(
+          text: const TextSpan(
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+              height: 1.15,
+            ),
+            children: [
+              TextSpan(
+                text: 'Tecnologia que\ntrabalha ',
+                style: TextStyle(color: TargetColors.textWhite),
+              ),
+              TextSpan(
+                text: 'por você.',
+                style: TextStyle(color: TargetColors.red),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'Mais do que rastreamento, oferecemos tranquilidade, eficiência e suporte de verdade. Nossa plataforma é intuitiva, completa e pensada para facilitar o seu dia a dia.',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            color: TargetColors.textMuted,
+            fontSize: 14.5,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 32),
+        // Grade 2 colunas x 3 linhas
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 500;
+            return Wrap(
+              spacing: 20,
+              runSpacing: 24,
+              children: recursos.map((r) {
+                return SizedBox(
+                  width:
+                      isWide ? (constraints.maxWidth - 20) / 2 : double.infinity,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: TargetColors.red.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: TargetColors.red.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Icon(
+                          r['icone'] as IconData,
+                          color: TargetColors.red,
+                          size: 19,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              r['titulo'] as String,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                color: TargetColors.textWhite,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              r['desc'] as String,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                color: TargetColors.textMuted,
+                                fontSize: 12,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -3342,250 +4156,6 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- SELOS DE AUTORIDADE & HOMOLOGAÇÃO ---
-  Widget _buildSelosAutoridade(bool isDesktop) {
-    final selos = [
-      {
-        'icone': Icons.verified,
-        'titulo': 'Homologado ANATEL',
-        'desc': 'Rastreadores 100% certificados pelos órgãos reguladores.',
-      },
-      {
-        'icone': Icons.sim_card,
-        'titulo': '4G Multi-Operadora',
-        'desc': 'Conexão automática na melhor torre (Claro, Vivo e TIM).',
-      },
-      {
-        'icone': Icons.shield,
-        'titulo': 'Bloqueio Progressivo',
-        'desc': 'Corte de ignição seguro sem risco de acidentes na via.',
-      },
-      {
-        'icone': Icons.battery_charging_full,
-        'titulo': 'Anti-Dreno de Bateria',
-        'desc': 'Modo repouso inteligente: zero risco de descarregar a bateria.',
-      },
-    ];
-
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFF10141A),
-      padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 60 : 20, vertical: 50),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1240),
-          child: Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            alignment: WrapAlignment.center,
-            children: selos.map((s) {
-              return Container(
-                width: isDesktop ? 270 : double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF111A23),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF2C3E50)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(s['icone'] as IconData,
-                          color: const Color(0xFFFF1E2D), size: 24),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            s['titulo'] as String,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            s['desc'] as String,
-                            style: const TextStyle(
-                                color: Color(0xFF9E9E9E),
-                                fontSize: 11.5,
-                                height: 1.3),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // --- SEÇÃO: PRINCIPAIS RECURSOS ---
-  Widget _buildSecaoRecursos(bool isDesktop) {
-    final recursos = [
-      {
-        'icon': Icons.location_on_outlined,
-        'titulo': 'Localização em tempo real',
-        'desc': 'Precisão métrica com atualização a cada segundo.'
-      },
-      {
-        'icon': Icons.history,
-        'titulo': 'Histórico de rotas',
-        'desc': 'Consulte trajetos, paradas e velocidades percorridas.'
-      },
-      {
-        'icon': Icons.lock_outline,
-        'titulo': 'Bloqueio remoto',
-        'desc': 'Corte da ignição pelo celular em caso de furto ou roubo.'
-      },
-      {
-        'icon': Icons.notifications_active_outlined,
-        'titulo': 'Alertas no app e WhatsApp',
-        'desc': 'Avisos imediatos de ignição ligada e cerca violada.'
-      },
-      {
-        'icon': Icons.fence_outlined,
-        'titulo': 'Cerca virtual inteligente',
-        'desc': 'Defina áreas seguras e saiba se o veículo sair do local.'
-      },
-      {
-        'icon': Icons.description_outlined,
-        'titulo': 'Relatórios completos',
-        'desc': 'Quilometragem percorrida, horímetro e telemetria.'
-      },
-      {
-        'icon': Icons.phone_android,
-        'titulo': 'App Android, iOS e Web',
-        'desc': 'Acesse de qualquer smartphone ou computador 24h.'
-      },
-      {
-        'icon': Icons.headset_mic_outlined,
-        'titulo': 'Suporte técnico humanizado',
-        'desc': 'Atendimento rápido e direto no WhatsApp (22) 99769-4019.'
-      },
-    ];
-
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFF0B1117),
-      padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 60 : 20, vertical: 70),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1240),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'TECNOLOGIA PILOT GPS',
-                style: TextStyle(
-                  color: Color(0xFFFF1E2D),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2.0,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Principais recursos',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Tudo o que você precisa para acompanhar e proteger seu patrimônio.',
-                style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
-              ),
-              const SizedBox(height: 36),
-
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final colunas =
-                      isDesktop ? 4 : (constraints.maxWidth > 650 ? 2 : 1);
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: colunas,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                      childAspectRatio: isDesktop ? 2.1 : 2.5,
-                    ),
-                    itemCount: recursos.length,
-                    itemBuilder: (context, index) {
-                      final item = recursos[index];
-                      return Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF111A23),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFF263238)),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF1E2D)
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(item['icon'] as IconData,
-                                  color: const Color(0xFFFF1E2D), size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    item['titulo'] as String,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    item['desc'] as String,
-                                    style: const TextStyle(
-                                        color: Color(0xFF9E9E9E),
-                                        fontSize: 11.5,
-                                        height: 1.3),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   // --- SEÇÃO DE PLANOS COM SELETOR DE QUANTIDADE DE VEÍCULOS ---
   Widget _buildSecaoPlanosComSeletor(bool isDesktop) {
     return Container(
@@ -4136,73 +4706,228 @@ class _LandingPageScreenState extends State<LandingPageScreen>
     );
   }
 
-  // --- SEÇÃO: CTA FINAL ---
-  Widget _buildSecaoCtaFinal() {
+  // --- 12. BANNER PRÉ-FOOTER (JÁ SÃO MAIS DE 10.000 VEÍCULOS PROTEGIDOS) ---
+  Widget _buildPreFooterBanner(bool isDesktop) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF0B1117),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
+      color: TargetColors.darkBg, // #0B1117
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 60 : 20,
+        vertical: 30,
+      ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Column(
-            children: [
-              const Icon(Icons.shield_outlined,
-                  color: Color(0xFFFF1E2D), size: 44),
-              const SizedBox(height: 16),
-              const Text(
-                'Proteja seu veículo com tecnologia de verdade',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Fale com nossos especialistas agora pelo WhatsApp (22) 99769-4019 e ative o rastreamento 4G com cercas virtuais e relatórios.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
-              ),
-              const SizedBox(height: 28),
-              Wrap(
-                spacing: 14,
-                runSpacing: 12,
-                alignment: WrapAlignment.center,
-                children: [
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF25D366),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    icon: const Icon(Icons.chat, size: 20),
-                    label: const Text('Falar no WhatsApp: (22) 99769-4019',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    onPressed: () => _abrirWhatsApp(
-                        'Olá! Gostaria de contratar a proteção veicular da Target.'),
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 36 : 20,
+              vertical: isDesktop ? 28 : 22,
+            ),
+            decoration: BoxDecoration(
+              color: TargetColors.panel, // #111A23
+              borderRadius: BorderRadius.circular(18),
+              border:
+                  Border.all(color: TargetColors.line, width: 1.2), // #26313D
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 20,
+                  offset: Offset(0, 6),
+                ),
+              ],
+            ),
+            child: isDesktop
+                ? Row(
+                    children: [
+                      // Logo e Faixa Vermelha
+                      const TargetLogoHorizontal(iconSize: 26, compact: true),
+                      const SizedBox(width: 32),
+                      Container(width: 1, height: 48, color: TargetColors.line),
+                      const SizedBox(width: 32),
+
+                      // Métrica: 10.000 Veículos
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'JÁ SÃO MAIS DE',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              color: TargetColors.textMuted,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            '10.000',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              color: TargetColors.textWhite,
+                              fontSize: 34,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                              height: 1.05,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'VEÍCULOS PROTEGIDOS EM TODO O BRASIL',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              color: TargetColors.textMuted,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const Spacer(),
+
+                      // Chamada Central
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Pronto para proteger o que te move?',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              color: TargetColors.textWhite,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Fale com a gente agora.',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              color: TargetColors.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      // Botão WhatsApp Oficial (#FF1E2D)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: TargetColors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 22, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.chat, size: 17),
+                        label: const Text(
+                          'Falar no WhatsApp',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onPressed: () => _abrirWhatsApp(
+                            'Olá! Gostaria de falar com um especialista sobre proteger meu veículo com a Target.'),
+                      ),
+
+                      const SizedBox(width: 24),
+
+                      // Slogan em estilo manuscrito/itálico no canto
+                      const Text(
+                        'Segurança\ntambém é\nliberdade.',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontStyle: FontStyle.italic,
+                          color: TargetColors.textMuted,
+                          fontSize: 13,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const TargetLogoHorizontal(iconSize: 24, compact: true),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'JÁ SÃO MAIS DE',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          color: TargetColors.textMuted,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        '10.000',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          color: TargetColors.textWhite,
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const Text(
+                        'VEÍCULOS PROTEGIDOS EM TODO O BRASIL',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          color: TargetColors.textMuted,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Pronto para proteger o que te move? Fale com a gente agora.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          color: TargetColors.textWhite,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: TargetColors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 22, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.chat, size: 17),
+                        label: const Text(
+                          'Falar no WhatsApp',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onPressed: () => _abrirWhatsApp(
+                            'Olá! Gostaria de falar com um especialista sobre proteger meu veículo com a Target.'),
+                      ),
+                    ],
                   ),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0xFFFF1E2D)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    icon: const Icon(Icons.login,
-                        size: 20, color: Color(0xFFFF1E2D)),
-                    label: const Text('Área do Cliente (Login)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    onPressed: _irParaLogin,
-                  ),
-                ],
-              ),
-            ],
           ),
         ),
       ),
