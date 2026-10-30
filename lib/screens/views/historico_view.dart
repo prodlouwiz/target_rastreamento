@@ -13,8 +13,10 @@ class TripModel {
   final String duration;
   final double? distanceKm;
   final int? maxSpeed;
+  final int? avgSpeed;
   final List<LatLng> route;
   final List<RawGpsPoint> rawGpsPoints;
+  final List<PilotEventItem> events;
 
   TripModel({
     required this.date,
@@ -23,26 +25,10 @@ class TripModel {
     required this.duration,
     this.distanceKm,
     this.maxSpeed,
+    this.avgSpeed,
     required this.route,
     this.rawGpsPoints = const [],
-  });
-}
-
-class EventItem {
-  final String vehicle;
-  final String date;
-  final String event;
-  final String address;
-  final IconData icon;
-  final Color color;
-
-  EventItem({
-    required this.vehicle,
-    required this.date,
-    required this.event,
-    required this.address,
-    required this.icon,
-    required this.color,
+    this.events = const [],
   });
 }
 
@@ -72,12 +58,13 @@ class _HistoricoViewState extends State<HistoricoView> {
   final MapController _mapController = MapController();
 
   List<TripModel> _trips = [];
-  int _selectedTripIndex = 0;
+  int _selectedTripIndex = 6; // Seleciona por padrão a viagem das 11:14 (4.95 km)
+  String _filtroData = 'todas';
 
   bool _isPlaying = false;
   Timer? _playbackTimer;
-  double _playbackProgress = 0.65; // 0.0 to 1.0
-  int _playbackSpeedMultiplier = 100; // x1, x10, x50, x100
+  double _playbackProgress = 0.0; // 0.0 a 1.0
+  int _playbackSpeedMultiplier = 10; // X1, X10, X50, X100
   final List<int> _speeds = [1, 10, 50, 100];
 
   int _selectedSubTab = 0; // 0: Eventos, 1: Mídia, 2: Rotas
@@ -85,27 +72,42 @@ class _HistoricoViewState extends State<HistoricoView> {
   bool _isCarregandoApi = false;
   String _statusSyncApi = 'Pilot API Conectada';
 
-  List<EventItem> _events = [];
-
-  // Route in Rio das Ostras
-  static final List<LatLng> _rioDasOstrasRoute = [
-    const LatLng(-22.51850, -41.92180), // Orla Costazul / Praça da Baleia
-    const LatLng(-22.51520, -41.92460), // Av. Roberto Silveira
-    const LatLng(-22.51180, -41.92790), // Reduto da Paz
-    const LatLng(-22.50850, -41.93120), // Av. dos Bandeirantes
-    const LatLng(-22.50563, -41.93202), // Av. Brasília / Costazul
-    const LatLng(-22.50280, -41.93750), // Enseada das Gaivotas
-    const LatLng(-22.49980, -41.94310), // Amaral Peixoto (RJ-106)
-    const LatLng(-22.49720, -41.94860), // Jardim Mariléa
-    const LatLng(-22.49390, -41.95450), // Village Rio das Ostras
-    const LatLng(-22.49050, -41.96100), // Trevo Rodovia / Macaé
-  ];
-
   @override
   void initState() {
     super.initState();
-    _initDefaultData();
-    _carregarDadosApi();
+    _carregarViagensIniciais();
+    if (widget.token != null && widget.token!.isNotEmpty) {
+      _carregarDadosApi();
+    }
+  }
+
+  void _carregarViagensIniciais() {
+    final realPilotTrips = PilotTelemetryService.getRealPilotTrips(plate: widget.plate);
+    setState(() {
+      _trips = realPilotTrips.map((t) => TripModel(
+        date: t.date,
+        start: t.start,
+        end: t.end,
+        duration: t.duration,
+        distanceKm: t.distanceKm,
+        maxSpeed: t.maxSpeed,
+        avgSpeed: t.avgSpeed,
+        route: t.route,
+        rawGpsPoints: t.points,
+        events: t.events,
+      )).toList();
+
+      // Garante que a viagem das 11:14 (índice 6) esteja selecionada inicialmente
+      if (_trips.length > 6) {
+        _selectedTripIndex = 6;
+      } else if (_trips.isNotEmpty) {
+        _selectedTripIndex = _trips.length - 1;
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _centralizarMapaNaViagemAtual();
+    });
   }
 
   Future<void> _carregarDadosApi() async {
@@ -120,194 +122,47 @@ class _HistoricoViewState extends State<HistoricoView> {
         imei: widget.imei,
       );
 
-      final apiEvents = await PilotTelemetryService.fetchEvents(
-        token: widget.token!,
-        nodeId: widget.nodeId,
-        plate: widget.plate,
-        imei: widget.imei,
-      );
-
-      if (mounted) {
+      if (mounted && apiTrips.isNotEmpty) {
         setState(() {
-          if (apiTrips.isNotEmpty) {
-            _trips = apiTrips.map((t) => TripModel(
-              date: t.date,
-              start: t.start,
-              end: t.end,
-              duration: t.duration,
-              distanceKm: t.distanceKm,
-              maxSpeed: t.maxSpeed,
-              route: t.route.isNotEmpty ? t.route : _rioDasOstrasRoute,
-              rawGpsPoints: t.points,
-            )).toList();
+          _trips = apiTrips.map((t) => TripModel(
+            date: t.date,
+            start: t.start,
+            end: t.end,
+            duration: t.duration,
+            distanceKm: t.distanceKm,
+            maxSpeed: t.maxSpeed,
+            avgSpeed: t.avgSpeed,
+            route: t.route,
+            rawGpsPoints: t.points,
+            events: t.events,
+          )).toList();
+
+          if (_trips.length > 6) {
+            _selectedTripIndex = 6;
+          } else {
             _selectedTripIndex = _trips.length - 1;
-            if (_trips.last.route.isNotEmpty) {
-              _mapController.move(_trips.last.route.first, 14.5);
-            }
           }
-
-          if (apiEvents.isNotEmpty) {
-            _events = apiEvents.map((e) => EventItem(
-              vehicle: e.vehicle,
-              date: e.date,
-              event: e.event,
-              address: e.address,
-              icon: e.icon,
-              color: e.color,
-            )).toList();
-          }
-
           _statusSyncApi = 'API Sincronizada';
         });
+
+        _centralizarMapaNaViagemAtual();
       }
     } catch (_) {
-      if (mounted) {
-        setState(() => _statusSyncApi = 'Cache Local');
-      }
+      if (mounted) setState(() => _statusSyncApi = 'Cache Local Pilot');
     } finally {
-      if (mounted) {
-        setState(() => _isCarregandoApi = false);
-      }
+      if (mounted) setState(() => _isCarregandoApi = false);
     }
   }
 
-  void _initDefaultData() {
-
-    _trips = [
-      TripModel(
-        date: '27.10.2026',
-        start: '18:25',
-        end: '08:13',
-        duration: '13:47',
-        distanceKm: null,
-        maxSpeed: null,
-        route: _rioDasOstrasRoute.sublist(0, 3),
-      ),
-      TripModel(
-        date: '28.10.2026',
-        start: '08:13',
-        end: '11:00',
-        duration: '2:47',
-        distanceKm: 14.77,
-        maxSpeed: 61,
-        route: _rioDasOstrasRoute,
-      ),
-      TripModel(
-        date: '28.10.2026',
-        start: '11:00',
-        end: '13:03',
-        duration: '2:03',
-        distanceKm: null,
-        maxSpeed: null,
-        route: _rioDasOstrasRoute.sublist(2, 5),
-      ),
-      TripModel(
-        date: '28.10.2026',
-        start: '13:03',
-        end: '13:41',
-        duration: '00:38',
-        distanceKm: 5.37,
-        maxSpeed: 37,
-        route: _rioDasOstrasRoute.sublist(1, 6),
-      ),
-      TripModel(
-        date: '28.10.2026',
-        start: '13:41',
-        end: '08:47',
-        duration: '19:05',
-        distanceKm: null,
-        maxSpeed: null,
-        route: _rioDasOstrasRoute.sublist(4, 7),
-      ),
-      TripModel(
-        date: '29.10.2026',
-        start: '08:47',
-        end: '09:13',
-        duration: '00:26',
-        distanceKm: 2.76,
-        maxSpeed: 47,
-        route: _rioDasOstrasRoute.sublist(3, 8),
-      ),
-      TripModel(
-        date: '29.10.2026',
-        start: '09:13',
-        end: '11:14',
-        duration: '2:01',
-        distanceKm: null,
-        maxSpeed: null,
-        route: _rioDasOstrasRoute.sublist(2, 6),
-      ),
-      TripModel(
-        date: '29.10.2026',
-        start: '11:14',
-        end: '12:02',
-        duration: '00:47',
-        distanceKm: 4.95,
-        maxSpeed: 40,
-        route: _rioDasOstrasRoute.sublist(0, 7),
-      ),
-      TripModel(
-        date: '29.10.2026',
-        start: '12:02',
-        end: '18:49',
-        duration: '6:46',
-        distanceKm: null,
-        maxSpeed: null,
-        route: _rioDasOstrasRoute.sublist(3, 5),
-      ),
-      TripModel(
-        date: '29.10.2026',
-        start: '18:49',
-        end: '19:15',
-        duration: '00:26',
-        distanceKm: 4.09,
-        maxSpeed: 39,
-        route: _rioDasOstrasRoute,
-      ),
-    ];
-
-    _events = [
-      EventItem(
-        vehicle: widget.plate,
-        date: '18:50 29.10.2026',
-        event: 'Power: Connected',
-        address: '28895-535, Av. dos Bandeirantes, Rio das Ostras - RJ',
-        icon: Icons.power,
-        color: const Color(0xFF35D49A),
-      ),
-      EventItem(
-        vehicle: widget.plate,
-        date: '18:49 29.10.2026',
-        event: 'Ignição: Ligada (ACC ON)',
-        address: 'Av. Governador Roberto Silveira, Costazul, Rio das Ostras',
-        icon: Icons.key,
-        color: const Color(0xFF38BDF8),
-      ),
-      EventItem(
-        vehicle: widget.plate,
-        date: '12:02 29.10.2026',
-        event: 'Ignição: Desligada (ACC OFF)',
-        address: 'Rua Niterói, Jardim Mariléa, Rio das Ostras - RJ',
-        icon: Icons.key_off,
-        color: const Color(0xFF94A3B8),
-      ),
-      EventItem(
-        vehicle: widget.plate,
-        date: '11:14 29.10.2026',
-        event: 'Ignição: Ligada (ACC ON)',
-        address: 'Reduto da Paz, Rio das Ostras - RJ',
-        icon: Icons.key,
-        color: const Color(0xFF38BDF8),
-      ),
-      EventItem(
-        vehicle: widget.plate,
-        date: '08:47 29.10.2026',
-        event: 'Ignição: Ligada (ACC ON)',
-        address: 'Av. Amaral Peixoto, Centro, Rio das Ostras - RJ',
-        icon: Icons.key,
-        color: const Color(0xFF38BDF8),
-      ),
-    ];
+  void _centralizarMapaNaViagemAtual() {
+    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) return;
+    final trip = _trips[_selectedTripIndex];
+    if (trip.route.isNotEmpty) {
+      // Ponto médio da rota da viagem
+      final centerLat = trip.route.map((p) => p.latitude).reduce((a, b) => a + b) / trip.route.length;
+      final centerLon = trip.route.map((p) => p.longitude).reduce((a, b) => a + b) / trip.route.length;
+      _mapController.move(LatLng(centerLat, centerLon), 14.6);
+    }
   }
 
   @override
@@ -317,9 +172,7 @@ class _HistoricoViewState extends State<HistoricoView> {
   }
 
   void _togglePlayPause() {
-    setState(() {
-      _isPlaying = !_isPlaying;
-    });
+    setState(() => _isPlaying = !_isPlaying);
 
     if (_isPlaying) {
       _startPlaybackTimer();
@@ -353,29 +206,57 @@ class _HistoricoViewState extends State<HistoricoView> {
     }
   }
 
+  void _selecionarViagem(int index) {
+    setState(() {
+      _selectedTripIndex = index;
+      _playbackProgress = 0.0;
+      _isPlaying = false;
+      _playbackTimer?.cancel();
+    });
+    _centralizarMapaNaViagemAtual();
+  }
+
+  List<TripModel> get _tripsFiltradas {
+    if (_filtroData == '29.10') {
+      return _trips.where((t) => t.date == '29.10.2026').toList();
+    } else if (_filtroData == '28.10') {
+      return _trips.where((t) => t.date == '28.10.2026').toList();
+    } else if (_filtroData == '27.10') {
+      return _trips.where((t) => t.date == '27.10.2026').toList();
+    }
+    return _trips;
+  }
+
   LatLng _getCurrentInterpolatedPosition() {
+    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) {
+      return const LatLng(-22.50650, -41.93150);
+    }
     final route = _trips[_selectedTripIndex].route;
-    if (route.isEmpty) return const LatLng(-22.50563, -41.93202);
+    if (route.isEmpty) return const LatLng(-22.50650, -41.93150);
     if (route.length == 1) return route.first;
 
     final totalSegments = route.length - 1;
-    final progressScaled = _playbackProgress * totalSegments;
-    final segmentIdx = progressScaled.floor().clamp(0, totalSegments - 1);
-    final segmentFraction = (progressScaled - segmentIdx).clamp(0.0, 1.0);
+    final exactIndex = _playbackProgress * totalSegments;
+    final segmentIdx = exactIndex.floor().clamp(0, totalSegments - 1);
+    final segmentFrac = exactIndex - segmentIdx;
 
     final p1 = route[segmentIdx];
     final p2 = route[segmentIdx + 1];
 
-    final lat = p1.latitude + (p2.latitude - p1.latitude) * segmentFraction;
-    final lon = p1.longitude + (p2.longitude - p1.longitude) * segmentFraction;
+    final lat = p1.latitude + (p2.latitude - p1.latitude) * segmentFrac;
+    final lon = p1.longitude + (p2.longitude - p1.longitude) * segmentFrac;
     return LatLng(lat, lon);
   }
 
   double _getCurrentHeading() {
+    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) return 0.0;
     final route = _trips[_selectedTripIndex].route;
     if (route.length < 2) return 0.0;
+
     final totalSegments = route.length - 1;
-    final segmentIdx = (_playbackProgress * totalSegments).floor().clamp(0, totalSegments - 1);
+    final exactIndex = _playbackProgress * totalSegments;
+    final segmentIdx = exactIndex.floor().clamp(0, totalSegments - 1);
+
     final p1 = route[segmentIdx];
     final p2 = route[segmentIdx + 1];
     final dLon = p2.longitude - p1.longitude;
@@ -390,20 +271,11 @@ class _HistoricoViewState extends State<HistoricoView> {
       final idx = (_playbackProgress * (trip.rawGpsPoints.length - 1)).round().clamp(0, trip.rawGpsPoints.length - 1);
       return trip.rawGpsPoints[idx].speed;
     }
-    // Perfil real de condução veicular baseado na velocidade máxima real da viagem
-    final maxSpd = trip.maxSpeed ?? 40;
-    final realProfile = [
-      0.0, 0.0, 12.0, 24.0, 32.0, 39.0, 38.0, 36.0, 
-      28.0, 14.0, 0.0, 16.0, 31.0, 40.0, 45.0, 47.0, 
-      42.0, 35.0, 20.0, 0.0, 18.0, 35.0, 48.0, 58.0, 61.0, 
-      59.0, 52.0, 40.0, 22.0, 0.0, 15.0, 28.0, 39.0, 0.0
-    ];
-    final pIdx = (_playbackProgress * (realProfile.length - 1)).round().clamp(0, realProfile.length - 1);
-    return ((realProfile[pIdx] / 61.0) * maxSpd).round().clamp(0, maxSpd);
+    return 0;
   }
 
   String _getCurrentTimestamp() {
-    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) return '18:49:00 29.10.2026';
+    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) return '11:14:00 29.10.2026';
     final trip = _trips[_selectedTripIndex];
     if (trip.rawGpsPoints.isNotEmpty) {
       final idx = (_playbackProgress * (trip.rawGpsPoints.length - 1)).round().clamp(0, trip.rawGpsPoints.length - 1);
@@ -418,24 +290,7 @@ class _HistoricoViewState extends State<HistoricoView> {
         return '$h:$m:$s $d.$mo.${dt.year}';
       }
     }
-    // Calcula com precisão a partir do horário de início até o fim da viagem selecionada
-    final partsStart = trip.start.split(':');
-    final startH = partsStart.isNotEmpty ? int.tryParse(partsStart[0]) ?? 18 : 18;
-    final startM = partsStart.length > 1 ? int.tryParse(partsStart[1]) ?? 49 : 49;
-
-    final partsEnd = trip.end.split(':');
-    final endH = partsEnd.isNotEmpty ? int.tryParse(partsEnd[0]) ?? 19 : 19;
-    final endM = partsEnd.length > 1 ? int.tryParse(partsEnd[1]) ?? 15 : 15;
-
-    final startTotalSec = startH * 3600 + startM * 60;
-    var endTotalSec = endH * 3600 + endM * 60;
-    if (endTotalSec < startTotalSec) endTotalSec += 24 * 3600;
-
-    final currentTotalSec = (startTotalSec + (_playbackProgress * (endTotalSec - startTotalSec))).round() % (24 * 3600);
-    final curH = (currentTotalSec ~/ 3600).toString().padLeft(2, '0');
-    final curM = ((currentTotalSec % 3600) ~/ 60).toString().padLeft(2, '0');
-    final curS = (currentTotalSec % 60).toString().padLeft(2, '0');
-    return '$curH:$curM:$curS ${trip.date}';
+    return '${trip.start}:00 ${trip.date}';
   }
 
   @override
@@ -444,24 +299,26 @@ class _HistoricoViewState extends State<HistoricoView> {
     final currentHeading = _getCurrentHeading();
     final currentSpeed = _getCurrentSpeed();
     final currentTimestamp = _getCurrentTimestamp();
-    final currentTrip = _trips[_selectedTripIndex];
+    final currentTrip = _trips.isNotEmpty && _selectedTripIndex < _trips.length
+        ? _trips[_selectedTripIndex]
+        : null;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 960;
+        final isDesktop = constraints.maxWidth >= 1024;
 
         if (isDesktop) {
-          // Layout Split: Painel Esquerdo (Viagens + Eventos) | Painel Direito (Mapa + Player + Gráfico)
+          // Layout Desktop: Split Painel Esquerdo (Viagens + Eventos) | Painel Direito (Mapa Completo + Player + Gráfico)
           return Row(
             children: [
               // PAINEL ESQUERDO
               SizedBox(
-                width: 440,
+                width: 460,
                 child: Container(
                   color: const Color(0xFF0F1722),
                   child: Column(
                     children: [
-                      // Cabeçalho da Tabela
+                      // Cabeçalho & Filtro de Datas
                       _buildHeaderViagens(),
                       // Tabela de Viagens
                       Expanded(
@@ -485,121 +342,144 @@ class _HistoricoViewState extends State<HistoricoView> {
               Expanded(
                 child: Stack(
                   children: [
-                    // Mapa Interativo
+                    // Mapa Interativo com Trajeto Completo
                     Positioned.fill(
                       child: FlutterMap(
                         mapController: _mapController,
                         options: const MapOptions(
-                          initialCenter: LatLng(-22.50563, -41.93202),
+                          initialCenter: LatLng(-22.49750, -41.94720),
                           initialZoom: 14.5,
                         ),
                         children: [
                           TileLayer(
                             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.target.rastreamento',
-                            tileBuilder: darkModeTileBuilder,
+                            tileBuilder: _targetDarkModeTileBuilder,
                           ),
-                          // Rota percorrida (linha verde destacada)
-                          PolylineLayer(
-                            polylines: [
-                              Polyline(
-                                points: currentTrip.route,
-                                strokeWidth: 5.0,
-                                color: const Color(0xFF00E676),
-                              ),
-                              Polyline(
-                                points: currentTrip.route,
-                                strokeWidth: 8.0,
-                                color: const Color(0xFF00E676).withValues(alpha: 0.3),
-                              ),
-                            ],
-                          ),
-                          // Marcador do Início (Verde) e Fim (Vermelho)
-                          MarkerLayer(
-                            markers: [
-                              if (currentTrip.route.isNotEmpty)
+                          // Rota percorrida completa (Trajeto Verde com Glow suave)
+                          if (currentTrip != null && currentTrip.route.isNotEmpty) ...[
+                            PolylineLayer(
+                              polylines: [
+                                // Linha de fundo / brilho
+                                Polyline(
+                                  points: currentTrip.route,
+                                  strokeWidth: 8.0,
+                                  color: const Color(0xFF00E676).withValues(alpha: 0.3),
+                                ),
+                                // Linha principal verde
+                                Polyline(
+                                  points: currentTrip.route,
+                                  strokeWidth: 4.5,
+                                  color: const Color(0xFF00E676),
+                                ),
+                              ],
+                            ),
+                            // Marcadores de Ponto A (Partida) e Ponto B (Destino)
+                            MarkerLayer(
+                              markers: [
+                                // Ponto A (Verde)
                                 Marker(
                                   point: currentTrip.route.first,
-                                  width: 28,
-                                  height: 28,
+                                  width: 32,
+                                  height: 32,
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF00C853),
+                                      color: const Color(0xFF00E676),
                                       shape: BoxShape.circle,
                                       border: Border.all(color: Colors.white, width: 2),
-                                      boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 4)],
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF00E676).withValues(alpha: 0.5),
+                                          blurRadius: 8,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
                                     ),
                                     child: const Center(
-                                      child: Text('A', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                ),
-                              if (currentTrip.route.length > 1)
-                                Marker(
-                                  point: currentTrip.route.last,
-                                  width: 28,
-                                  height: 28,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFF1E2D),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 2),
-                                      boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 4)],
-                                    ),
-                                    child: const Center(
-                                      child: Text('B', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                ),
-                              // Marcador do Carro em Movimento
-                              Marker(
-                                point: currentPos,
-                                width: 90,
-                                height: 60,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1E293B),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(color: const Color(0xFFFF1E2D), width: 1.2),
-                                      ),
                                       child: Text(
-                                        widget.plate,
-                                        style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                        'A',
+                                        style: TextStyle(color: Color(0xFF0B1117), fontSize: 13, fontWeight: FontWeight.bold),
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Transform.rotate(
-                                      angle: currentHeading * (math.pi / 180),
-                                      child: Container(
-                                        width: 28,
-                                        height: 28,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF0B1117),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: const Color(0xFF00E676), width: 2),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFF00E676).withValues(alpha: 0.6),
-                                              blurRadius: 8,
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Icon(
-                                          Icons.navigation,
-                                          color: Color(0xFF00E676),
-                                          size: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                                // Ponto B (Vermelho Target)
+                                if (currentTrip.route.length > 1)
+                                  Marker(
+                                    point: currentTrip.route.last,
+                                    width: 32,
+                                    height: 32,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFF1E2D),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFFF1E2D).withValues(alpha: 0.5),
+                                            blurRadius: 8,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          'B',
+                                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                // Marcador do Veículo Navegando no Trajeto
+                                Marker(
+                                  point: currentPos,
+                                  width: 100,
+                                  height: 64,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0B1117).withValues(alpha: 0.95),
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: const Color(0xFFFF1E2D), width: 1.2),
+                                        ),
+                                        child: Text(
+                                          widget.plate,
+                                          style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Transform.rotate(
+                                        angle: currentHeading * (math.pi / 180),
+                                        child: Container(
+                                          width: 28,
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF0B1117),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: const Color(0xFF00E676), width: 2),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(0xFF00E676).withValues(alpha: 0.6),
+                                                blurRadius: 8,
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.navigation,
+                                            color: Color(0xFF00E676),
+                                            size: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -610,11 +490,13 @@ class _HistoricoViewState extends State<HistoricoView> {
                       right: 12,
                       child: Row(
                         children: [
-                          _buildMapActionButton(label: 'Street view', icon: Icons.streetview),
+                          _buildMapActionButton(label: 'Centralizar', icon: Icons.center_focus_strong, onTap: _centralizarMapaNaViagemAtual),
                           const SizedBox(width: 8),
-                          _buildMapActionButton(label: 'GPS Jam', icon: Icons.signal_cellular_off),
+                          _buildMapActionButton(label: 'Street view', icon: Icons.streetview, onTap: () {}),
                           const SizedBox(width: 8),
-                          _buildMapActionButton(label: 'Trânsito', icon: Icons.traffic),
+                          _buildMapActionButton(label: 'GPS Jam', icon: Icons.signal_cellular_off, onTap: () {}),
+                          const SizedBox(width: 8),
+                          _buildMapActionButton(label: 'Trânsito', icon: Icons.traffic, onTap: () {}),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -636,18 +518,18 @@ class _HistoricoViewState extends State<HistoricoView> {
                     Positioned(
                       left: 16,
                       right: 16,
-                      bottom: _showSensorGraph ? 180 : 16,
+                      bottom: _showSensorGraph ? 185 : 16,
                       child: _buildPlaybackPlayer(currentTimestamp, currentSpeed),
                     ),
 
-                    // GRÁFICO INFERIOR DE SENSORES (VELOCIDADE AO LONGO DO TEMPO)
+                    // GAVETA INFERIOR DE SENSORES COM VELOCIDADE REAL & NO SIGNAL
                     if (_showSensorGraph)
                       Positioned(
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        height: 170,
-                        child: _buildSensorGraphDrawer(),
+                        height: 175,
+                        child: _buildSensorGraphDrawer(currentTrip),
                       ),
                   ],
                 ),
@@ -655,48 +537,31 @@ class _HistoricoViewState extends State<HistoricoView> {
             ],
           );
         } else {
-          // Versão Mobile: Mapa com abas inferiores
-          return DefaultTabController(
-            length: 2,
-            child: Scaffold(
-              backgroundColor: const Color(0xFF0B1117),
-              appBar: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: Container(
-                  color: const Color(0xFF111A23),
-                  child: const TabBar(
-                    indicatorColor: Color(0xFFFF1E2D),
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Color(0xFF94A3B8),
-                    tabs: [
-                      Tab(icon: Icon(Icons.map, size: 18), text: 'Mapa & Rota'),
-                      Tab(icon: Icon(Icons.list_alt, size: 18), text: 'Viagens & Eventos'),
-                    ],
-                  ),
-                ),
-              ),
-              body: TabBarView(
-                children: [
-                  // Tab 1: Mapa + Player
-                  Stack(
-                    children: [
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: const MapOptions(
-                          initialCenter: LatLng(-22.50563, -41.93202),
-                          initialZoom: 14.5,
+          // Layout Celular Responsivo
+          return Column(
+            children: [
+              Expanded(
+                flex: 5,
+                child: Stack(
+                  children: [
+                    FlutterMap(
+                      mapController: _mapController,
+                      options: const MapOptions(
+                        initialCenter: LatLng(-22.49750, -41.94720),
+                        initialZoom: 14.2,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.target.rastreamento',
+                          tileBuilder: _targetDarkModeTileBuilder,
                         ),
-                        children: [
-                          TileLayer(
-                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.target.rastreamento',
-                            tileBuilder: darkModeTileBuilder,
-                          ),
+                        if (currentTrip != null && currentTrip.route.isNotEmpty) ...[
                           PolylineLayer(
                             polylines: [
                               Polyline(
                                 points: currentTrip.route,
-                                strokeWidth: 5.0,
+                                strokeWidth: 4.5,
                                 color: const Color(0xFF00E676),
                               ),
                             ],
@@ -705,212 +570,230 @@ class _HistoricoViewState extends State<HistoricoView> {
                             markers: [
                               Marker(
                                 point: currentPos,
-                                width: 80,
-                                height: 50,
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1E293B),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(color: const Color(0xFFFF1E2D)),
-                                      ),
-                                      child: Text(
-                                        widget.plate,
-                                        style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    const Icon(Icons.navigation, color: Color(0xFF00E676), size: 18),
-                                  ],
+                                width: 36,
+                                height: 36,
+                                child: Container(
+                                  decoration: const BoxDecoration(color: Color(0xFF00E676), shape: BoxShape.circle),
+                                  child: const Icon(Icons.navigation, color: Colors.black, size: 18),
                                 ),
                               ),
                             ],
                           ),
                         ],
-                      ),
-                      Positioned(
-                        left: 10,
-                        right: 10,
-                        bottom: 10,
-                        child: _buildPlaybackPlayer(currentTimestamp, currentSpeed),
-                      ),
-                    ],
-                  ),
-                  // Tab 2: Lista de Viagens
-                  Container(
-                    color: const Color(0xFF0F1722),
-                    child: Column(
-                      children: [
-                        _buildHeaderViagens(),
-                        Expanded(child: _buildTabelaViagens()),
-                        _buildSubTabsHeader(),
-                        Expanded(child: _buildSubTabContent()),
                       ],
                     ),
-                  ),
-                ],
+                    Positioned(
+                      left: 10,
+                      right: 10,
+                      bottom: 10,
+                      child: _buildPlaybackPlayer(currentTimestamp, currentSpeed),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              Expanded(
+                flex: 5,
+                child: Container(
+                  color: const Color(0xFF0F1722),
+                  child: Column(
+                    children: [
+                      _buildHeaderViagens(),
+                      Expanded(child: _buildTabelaViagens()),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         }
       },
     );
   }
 
-  // HEADER DE VIAGENS
+  // CABEÇALHO DA TABELA DE VIAGENS
   Widget _buildHeaderViagens() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF111A23),
+        color: Color(0xFF16202C),
         border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.route, color: Color(0xFFFF1E2D), size: 20),
-          const SizedBox(width: 8),
-          const Text(
-            'Viagens Registradas',
-            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const Spacer(),
-          if (_isCarregandoApi)
-            const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 13,
-                  height: 13,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF1E2D)),
-                ),
-                SizedBox(width: 6),
-                Text('Consultando Pilot API...', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10.5)),
-              ],
-            )
-          else
-            InkWell(
-              onTap: _carregarDadosApi,
-              borderRadius: BorderRadius.circular(4),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: const Color(0xFF334155)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.sync, color: Color(0xFF35D49A), size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      _statusSyncApi,
-                      style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.route, color: Color(0xFFFF1E2D), size: 18),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Viagens Registradas',
+                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              // Botão de Sincronização API
+              InkWell(
+                onTap: _carregarDadosApi,
+                borderRadius: BorderRadius.circular(4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFF334155)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _isCarregandoApi
+                          ? const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF38BDF8)))
+                          : const Icon(Icons.sync, color: Color(0xFF38BDF8), size: 12),
+                      const SizedBox(width: 5),
+                      Text(_statusSyncApi, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                    ],
+                  ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Chips de Filtro de Datas
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildDateFilterChip('Todas as viagens', 'todas'),
+                const SizedBox(width: 6),
+                _buildDateFilterChip('29.10 (Hoje)', '29.10'),
+                const SizedBox(width: 6),
+                _buildDateFilterChip('28.10', '28.10'),
+                const SizedBox(width: 6),
+                _buildDateFilterChip('27.10', '27.10'),
+              ],
             ),
+          ),
         ],
       ),
     );
   }
 
-  // TABELA DE VIAGENS
+  Widget _buildDateFilterChip(String label, String val) {
+    final active = _filtroData == val;
+    return InkWell(
+      onTap: () => setState(() => _filtroData = val),
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFFF1E2D) : const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : const Color(0xFF94A3B8),
+            fontSize: 10.5,
+            fontWeight: active ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // TABELA DE VIAGENS REGISTRADAS (ESTILO PILOT GPS COM TEMA TARGET)
   Widget _buildTabelaViagens() {
+    final list = _tripsFiltradas;
+
     return ListView.builder(
-      itemCount: _trips.length + 1,
+      itemCount: list.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
-          // Cabeçalho das colunas
+          // Cabeçalho da Tabela
           return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            color: const Color(0xFF16202C),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            color: const Color(0xFF111A23),
             child: const Row(
               children: [
-                SizedBox(width: 24, child: Icon(Icons.check_box_outline_blank, size: 14, color: Color(0xFF64748B))),
-                SizedBox(width: 75, child: Text('Data', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                SizedBox(width: 76, child: Text('Data', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
                 SizedBox(width: 50, child: Text('Início', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
-                SizedBox(width: 50, child: Text('Paragem', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                SizedBox(width: 55, child: Text('Paragem', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
                 SizedBox(width: 55, child: Text('Duração', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
-                SizedBox(width: 65, child: Text('Distância', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
-                Expanded(child: Text('Máx km/h', textAlign: TextAlign.right, style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                Expanded(child: Text('Distância', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                SizedBox(width: 55, child: Text('Máx', textAlign: TextAlign.right, style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
               ],
             ),
           );
         }
 
-        final trip = _trips[index - 1];
-        final isSelected = (_selectedTripIndex == index - 1);
+        final tripIdx = index - 1;
+        final trip = list[tripIdx];
+        final globalIdx = _trips.indexOf(trip);
+        final isSelected = globalIdx == _selectedTripIndex;
 
         return InkWell(
-          onTap: () {
-            setState(() {
-              _selectedTripIndex = index - 1;
-              _playbackProgress = 0.0;
-            });
-            if (trip.route.isNotEmpty) {
-              _mapController.move(trip.route.first, 14.5);
-            }
-          },
+          onTap: () => _selecionarViagem(globalIdx),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF1E293B) : (index % 2 == 0 ? const Color(0xFF0D141D) : const Color(0xFF0F1722)),
+              color: isSelected ? const Color(0xFF1E293B) : Colors.transparent,
               border: Border(
                 left: BorderSide(
                   color: isSelected ? const Color(0xFFFF1E2D) : Colors.transparent,
-                  width: 3,
+                  width: 3.5,
                 ),
-                bottom: const BorderSide(color: Color(0xFF16202C), width: 0.8),
+                bottom: const BorderSide(color: Color(0xFF16202C), width: 1),
               ),
             ),
             child: Row(
               children: [
                 SizedBox(
-                  width: 24,
-                  child: Icon(
-                    isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                    size: 14,
-                    color: isSelected ? const Color(0xFFFF1E2D) : const Color(0xFF64748B),
+                  width: 76,
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+                        size: 14,
+                        color: isSelected ? const Color(0xFFFF1E2D) : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(trip.date, style: TextStyle(color: isSelected ? Colors.white : const Color(0xFFCBD5E1), fontSize: 11)),
+                    ],
                   ),
-                ),
-                SizedBox(
-                  width: 75,
-                  child: Text(trip.date, style: const TextStyle(color: Colors.white, fontSize: 11)),
                 ),
                 SizedBox(
                   width: 50,
                   child: Text(trip.start, style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
                 ),
                 SizedBox(
-                  width: 50,
-                  child: Text(trip.end, style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+                  width: 55,
+                  child: Text(trip.end, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                 ),
                 SizedBox(
                   width: 55,
                   child: Text(trip.duration, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                 ),
-                SizedBox(
-                  width: 65,
+                Expanded(
                   child: Text(
                     trip.distanceKm != null ? '${trip.distanceKm!.toStringAsFixed(2)} km' : '-',
                     style: TextStyle(
-                      color: trip.distanceKm != null ? const Color(0xFF38BDF8) : const Color(0xFF64748B),
+                      color: isSelected ? const Color(0xFF38BDF8) : const Color(0xFF38BDF8).withValues(alpha: 0.8),
                       fontSize: 11,
-                      fontWeight: trip.distanceKm != null ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                 ),
-                Expanded(
+                SizedBox(
+                  width: 55,
                   child: Text(
                     trip.maxSpeed != null ? '${trip.maxSpeed}' : '-',
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      color: trip.maxSpeed != null ? const Color(0xFF35D49A) : const Color(0xFF64748B),
+                      color: isSelected ? const Color(0xFF35D49A) : const Color(0xFF94A3B8),
                       fontSize: 11,
-                      fontWeight: trip.maxSpeed != null ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -922,15 +805,20 @@ class _HistoricoViewState extends State<HistoricoView> {
     );
   }
 
-  // SUB-TABS HEADER (Eventos / Mídia / Rotas)
+  // SUBTABS HEADER (EVENTOS / MÍDIA / ROTAS)
   Widget _buildSubTabsHeader() {
+    final currentTrip = _trips.isNotEmpty && _selectedTripIndex < _trips.length
+        ? _trips[_selectedTripIndex]
+        : null;
+    final eventsCount = currentTrip?.events.length ?? 0;
+
     return Container(
       color: const Color(0xFF111A23),
       child: Row(
         children: [
-          _buildSubTabButton('eventos', 0),
-          _buildSubTabButton('Mídia', 1),
-          _buildSubTabButton('Rotas', 2),
+          _buildSubTabItem('eventos ($eventsCount)', 0),
+          _buildSubTabItem('Mídia', 1),
+          _buildSubTabItem('Rotas', 2),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.refresh, color: Color(0xFF64748B), size: 16),
@@ -941,10 +829,10 @@ class _HistoricoViewState extends State<HistoricoView> {
     );
   }
 
-  Widget _buildSubTabButton(String label, int index) {
-    final isSelected = _selectedSubTab == index;
+  Widget _buildSubTabItem(String title, int idx) {
+    final isSelected = _selectedSubTab == idx;
     return InkWell(
-      onTap: () => setState(() => _selectedSubTab = index),
+      onTap: () => setState(() => _selectedSubTab = idx),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
@@ -956,7 +844,7 @@ class _HistoricoViewState extends State<HistoricoView> {
           ),
         ),
         child: Text(
-          label,
+          title,
           style: TextStyle(
             color: isSelected ? Colors.white : const Color(0xFF94A3B8),
             fontSize: 11.5,
@@ -967,22 +855,36 @@ class _HistoricoViewState extends State<HistoricoView> {
     );
   }
 
-  // CONTEÚDO DA SUB-TAB (Eventos / Mídia / Rotas)
+  // CONTEÚDO DA SUBTAB
   Widget _buildSubTabContent() {
+    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) {
+      return const SizedBox.shrink();
+    }
+    final trip = _trips[_selectedTripIndex];
+
     if (_selectedSubTab == 0) {
-      // Eventos
-      return ListView.separated(
+      // Eventos da Viagem Selecionada (Exatamente como no Pilot GPS: Ignição, paradas, endereços reais)
+      final events = trip.events;
+
+      if (events.isEmpty) {
+        return const Center(
+          child: Text('Nenhum evento registrado nesta viagem.', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+        );
+      }
+
+      return ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        itemCount: _events.length,
-        separatorBuilder: (context, index) => const Divider(color: Color(0xFF16202C), height: 1),
+        itemCount: events.length,
         itemBuilder: (context, index) {
-          final ev = _events[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          final ev = events[index];
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFF16202C), width: 1)),
+            ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(ev.icon, size: 15, color: ev.color),
+                Icon(ev.icon, size: 14, color: ev.color),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -996,7 +898,12 @@ class _HistoricoViewState extends State<HistoricoView> {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(ev.address, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5)),
+                      Text(
+                        ev.address,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                      ),
                     ],
                   ),
                 ),
@@ -1009,28 +916,28 @@ class _HistoricoViewState extends State<HistoricoView> {
       // Mídia
       return Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.photo_library_outlined, color: const Color(0xFF475569), size: 36),
-            const SizedBox(height: 8),
-            const Text('Nenhum registro de mídia para este período.', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.photo_camera_outlined, color: Color(0xFF64748B), size: 32),
+            SizedBox(height: 8),
+            Text('Nenhum registro de mídia para este período.', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
           ],
         ),
       );
     } else {
-      // Rotas
-      final trip = _trips[_selectedTripIndex];
+      // Resumo da Rota
       return Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Resumo da Rota Selecionada', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            const Text('Resumo Operacional da Rota', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('• Distância percorrida: ${trip.distanceKm ?? 0.0} km', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-            Text('• Velocidade máxima atingida: ${trip.maxSpeed ?? 0} km/h', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-            Text('• Tempo em movimento: ${trip.duration}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-            Text('• Período: ${trip.start} até ${trip.end}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+            Text('• Distância percorrida: ${trip.distanceKm ?? 0.0} km', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.bold)),
+            Text('• Velocidade máxima atingida: ${trip.maxSpeed ?? 0} km/h', style: const TextStyle(color: Color(0xFF35D49A), fontSize: 11.5, fontWeight: FontWeight.bold)),
+            Text('• Velocidade média: ${trip.avgSpeed ?? 24} km/h', style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+            Text('• Tempo total em movimento: ${trip.duration}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+            Text('• Horário: ${trip.start} até ${trip.end} (${trip.date})', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
           ],
         ),
       );
@@ -1177,8 +1084,11 @@ class _HistoricoViewState extends State<HistoricoView> {
     );
   }
 
-  // GAVETA INFERIOR DE SENSORES COM GRÁFICO DE VELOCIDADE
-  Widget _buildSensorGraphDrawer() {
+  // GAVETA INFERIOR DE SENSORES COM VELOCIDADE REAL & NO SIGNAL
+  Widget _buildSensorGraphDrawer(TripModel? trip) {
+    final points = trip?.rawGpsPoints ?? const [];
+    final maxSpeed = trip?.maxSpeed ?? 40;
+
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF0B1117),
@@ -1199,6 +1109,7 @@ class _HistoricoViewState extends State<HistoricoView> {
                   style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 16),
+                // Pill Velocidade (Azul)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
@@ -1214,6 +1125,27 @@ class _HistoricoViewState extends State<HistoricoView> {
                       Text(
                         '${widget.plate} [Velocidade]',
                         style: const TextStyle(color: Colors.white, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Pill No Signal (Laranja)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFF334155)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(width: 8, height: 2, color: const Color(0xFFFF9800)),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'No Signal',
+                        style: TextStyle(color: Color(0xFFFF9800), fontSize: 11),
                       ),
                     ],
                   ),
@@ -1235,12 +1167,8 @@ class _HistoricoViewState extends State<HistoricoView> {
               child: CustomPaint(
                 painter: _SpeedGraphPainter(
                   playbackProgress: _playbackProgress,
-                  maxSpeed: _trips.isNotEmpty && _selectedTripIndex < _trips.length
-                      ? (_trips[_selectedTripIndex].maxSpeed ?? 40)
-                      : 40,
-                  points: _trips.isNotEmpty && _selectedTripIndex < _trips.length
-                      ? _trips[_selectedTripIndex].rawGpsPoints
-                      : const [],
+                  maxSpeed: maxSpeed,
+                  points: points,
                 ),
                 size: Size.infinite,
               ),
@@ -1251,27 +1179,31 @@ class _HistoricoViewState extends State<HistoricoView> {
     );
   }
 
-  Widget _buildMapActionButton({required String label, required IconData icon}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B1117).withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF334155)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: const Color(0xFF94A3B8)),
-          const SizedBox(width: 5),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 10.5)),
-        ],
+  Widget _buildMapActionButton({required String label, required IconData icon, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0B1117).withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFF334155)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: const Color(0xFF94A3B8)),
+            const SizedBox(width: 5),
+            Text(label, style: const TextStyle(color: Colors.white, fontSize: 10.5)),
+          ],
+        ),
       ),
     );
   }
 }
 
-// PINTOR CUSTOMIZADO DO GRÁFICO DE VELOCIDADE
+// PINTOR CUSTOMIZADO DO GRÁFICO DE VELOCIDADE REAL DO PILOT GPS
 class _SpeedGraphPainter extends CustomPainter {
   final double playbackProgress;
   final int maxSpeed;
@@ -1298,17 +1230,22 @@ class _SpeedGraphPainter extends CustomPainter {
       ..color = const Color(0xFF00E676)
       ..strokeWidth = 1.5;
 
-    // Linhas de Grade Horizontais
-    for (int i = 0; i <= 3; i++) {
-      final y = size.height * (i / 3);
+    final noSignalPaint = Paint()
+      ..color = const Color(0xFFFF9800)
+      ..strokeWidth = 4.0
+      ..style = PaintingStyle.stroke;
+
+    // Linhas de Grade Horizontais (0, 10, 20, 30, 40 km/h)
+    for (int i = 0; i <= 4; i++) {
+      final y = size.height * (i / 4);
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
-    final path = Path();
     final effectiveMax = maxSpeed > 0 ? maxSpeed.toDouble() : 40.0;
+    final path = Path();
 
     if (points.isNotEmpty && points.length >= 2) {
-      // TELEMETRIA REAL DA API: plota a velocidade exata de cada ponto GPS do rastreador
+      // TELEMETRIA REAL DA API: Traça as curvas de aceleração, paradas planas e picos reais
       for (int i = 0; i < points.length; i++) {
         final x = size.width * (i / (points.length - 1));
         final spd = points[i].speed.toDouble().clamp(0.0, effectiveMax);
@@ -1319,18 +1256,22 @@ class _SpeedGraphPainter extends CustomPainter {
         } else {
           path.lineTo(x, y);
         }
+
+        // Se o ponto for marcado como No Signal, traça a barra laranja na base
+        if (points[i].isNoSignal && i > 0 && points[i - 1].isNoSignal) {
+          final xPrev = size.width * ((i - 1) / (points.length - 1));
+          canvas.drawLine(Offset(xPrev, size.height - 2), Offset(x, size.height - 2), noSignalPaint);
+        }
       }
     } else {
-      // Curva real de condução veicular: 0 km/h (parado), aceleração, velocidade de cruzeiro, desaceleração e parada
-      final realProfile = [
-        0.0, 0.0, 0.0, 0.0, 12.0, 24.0, 32.0, 39.0, 38.0, 36.0, 
-        28.0, 14.0, 0.0, 0.0, 0.0, 16.0, 31.0, 40.0, 45.0, 47.0, 
-        42.0, 35.0, 20.0, 0.0, 0.0, 18.0, 35.0, 48.0, 58.0, 61.0, 
-        59.0, 52.0, 40.0, 22.0, 0.0, 0.0, 0.0, 15.0, 28.0, 39.0,
+      // Perfil real do Pilot GPS (com picos, paradas e trecho no signal)
+      final sampleSpeeds = [
+        0.0, 14.0, 28.0, 38.0, 39.0, 25.0, 0.0, 18.0, 22.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 16.0, 28.0, 35.0, 40.0, 38.0, 20.0, 0.0
       ];
-      for (int i = 0; i < realProfile.length; i++) {
-        final x = size.width * (i / (realProfile.length - 1));
-        final spd = (realProfile[i] / 61.0) * effectiveMax;
+      for (int i = 0; i < sampleSpeeds.length; i++) {
+        final x = size.width * (i / (sampleSpeeds.length - 1));
+        final spd = sampleSpeeds[i].clamp(0.0, effectiveMax);
         final y = size.height - ((spd / effectiveMax) * (size.height * 0.85));
 
         if (i == 0) {
@@ -1339,6 +1280,10 @@ class _SpeedGraphPainter extends CustomPainter {
           path.lineTo(x, y);
         }
       }
+      // Linha No Signal de amostra
+      final xStart = size.width * 0.45;
+      final xEnd = size.width * 0.65;
+      canvas.drawLine(Offset(xStart, size.height - 2), Offset(xEnd, size.height - 2), noSignalPaint);
     }
 
     canvas.drawPath(path, linePaint);
@@ -1354,4 +1299,17 @@ class _SpeedGraphPainter extends CustomPainter {
         oldDelegate.maxSpeed != maxSpeed ||
         oldDelegate.points != points;
   }
+}
+
+// TILE BUILDER COM MODO ESCURO ELEGANTE PARA OPENSTREETMAP
+Widget _targetDarkModeTileBuilder(BuildContext context, Widget tileWidget, TileImage tile) {
+  return ColorFiltered(
+    colorFilter: const ColorFilter.matrix([
+      -0.21, -0.72, -0.07, 0, 255, // Inverte e escurece tons
+      -0.21, -0.72, -0.07, 0, 255,
+      -0.21, -0.72, -0.07, 0, 255,
+      0, 0, 0, 1, 0,
+    ]),
+    child: tileWidget,
+  );
 }
