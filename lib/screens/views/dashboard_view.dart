@@ -1,7 +1,14 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+import '../../services/pilot_telemetry_service.dart';
+import '../map_screen.dart' show VeiculoInfo;
+
 class DashboardView extends StatefulWidget {
+  final String? token;
+  final int? nodeId;
+  final String? imei;
+  final VeiculoInfo? veiculo;
   final String plate;
   final String model;
   final String deviceType;
@@ -9,6 +16,10 @@ class DashboardView extends StatefulWidget {
 
   const DashboardView({
     super.key,
+    this.token,
+    this.nodeId,
+    this.imei,
+    this.veiculo,
     this.plate = 'MQA6E92',
     this.model = 'Chevrolet Corsa 2020',
     this.deviceType = 'GT06',
@@ -24,27 +35,53 @@ class _DashboardViewState extends State<DashboardView> {
   DateTime _endDate = DateTime(2026, 10, 29);
   final int _speedLimit = 90;
   bool _isSyncing = false;
-  String _lastSync = '22:24:42 29.10.2026';
+
+  late DashboardTelemetryStats _stats;
+
+  @override
+  void initState() {
+    super.initState();
+    _stats = DashboardTelemetryStats.defaults(plate: widget.plate);
+    if (widget.token != null && widget.token!.isNotEmpty) {
+      _syncData();
+    }
+  }
 
   Future<void> _syncData() async {
     setState(() => _isSyncing = true);
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (mounted) {
-      final now = DateTime.now();
-      final h = now.hour.toString().padLeft(2, '0');
-      final m = now.minute.toString().padLeft(2, '0');
-      final s = now.second.toString().padLeft(2, '0');
-      setState(() {
-        _lastSync = '$h:$m:$s 29.10.2026';
-        _isSyncing = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Dashboard sincronizado com a telemetria do veículo!'),
-          backgroundColor: Color(0xFF1E293B),
-          duration: Duration(seconds: 2),
-        ),
-      );
+
+    try {
+      if (widget.token != null && widget.token!.isNotEmpty) {
+        final newStats = await PilotTelemetryService.fetchDashboardStats(
+          token: widget.token!,
+          nodeId: widget.nodeId,
+          plate: widget.plate,
+          imei: widget.imei ?? widget.veiculo?.imei,
+          startDate: _startDate,
+          endDate: _endDate,
+        );
+        if (mounted) {
+          setState(() {
+            _stats = newStats;
+            _isSyncing = false;
+          });
+        }
+      } else {
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) setState(() => _isSyncing = false);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Dashboard sincronizado com a telemetria do veículo!'),
+            backgroundColor: Color(0xFF1E293B),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isSyncing = false);
     }
   }
 
@@ -148,7 +185,7 @@ class _DashboardViewState extends State<DashboardView> {
 
           // Botão Pesquisar
           InkWell(
-            onTap: _syncData,
+            onTap: _isSyncing ? null : _syncData,
             borderRadius: BorderRadius.circular(6),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -156,12 +193,14 @@ class _DashboardViewState extends State<DashboardView> {
                 color: const Color(0xFF0284C7),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.search, color: Colors.white, size: 16),
-                  SizedBox(width: 4),
-                  Text('Filtrar', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  _isSyncing
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.search, color: Colors.white, size: 16),
+                  const SizedBox(width: 6),
+                  const Text('Filtrar', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -296,21 +335,21 @@ class _DashboardViewState extends State<DashboardView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // SEÇÃO 1: INFOBLOCOS DO VEÍCULO (12+ CARDS)
+          // SEÇÃO 1: INFOBLOCOS DO VEÍCULO (CARDS REAIS DA API)
           _buildSectionHeader('Infoblocos do veículo', Icons.grid_view),
           const SizedBox(height: 10),
           _buildInfoblocksGrid(),
 
           const SizedBox(height: 24),
 
-          // SEÇÃO 2: SPEED PIES (DONUT CHARTS)
+          // SEÇÃO 2: SPEED PIES (DONUT CHARTS REAIS DA API)
           _buildSectionHeader('Speed pies (Objetos: 1)', Icons.pie_chart_outline),
           const SizedBox(height: 10),
           _buildSpeedPiesRow(),
 
           const SizedBox(height: 24),
 
-          // SEÇÃO 3: VEHICLE GRAPHS (GRÁFICOS DE DIAS)
+          // SEÇÃO 3: VEHICLE GRAPHS (GRÁFICOS DIÁRIOS)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -346,32 +385,32 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  // GRADE DE INFOBLOCOS (KPI CARDS)
+  // GRADE DE INFOBLOCOS (KPI CARDS REAIS)
   Widget _buildInfoblocksGrid() {
     final items = [
-      {'title': 'Amount of expenses', 'val': '0,00', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Idle time', 'val': '22h 39min', 'cor': const Color(0xFF94A3B8)},
-      {'title': 'Ignition time', 'val': '1h 19min', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Combustível consumido', 'val': '0,00 l', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Duração de estacionamento', 'val': '27min', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Driving time', 'val': '1h 12min', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Driving distance', 'val': '13,80 km', 'cor': const Color(0xFF35D49A)},
-      {'title': 'Número do veículo', 'val': widget.plate, 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Modelo', 'val': 'Chevrolet Corsa', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Ano de lançamento', 'val': '2020', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Código VIN', 'val': '9BG116490LC...', 'cor': const Color(0xFF94A3B8)},
-      {'title': 'Número do motor', 'val': 'N20X148...', 'cor': const Color(0xFF94A3B8)},
-      {'title': 'Tipo de dispositivo', 'val': 'GT06', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Período', 'val': '29.10.2026 - 29.10.2026', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Número de viagens', 'val': '3', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Combustível abastecido', 'val': '0,00 l', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Combustível drenado', 'val': '0,00 l', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Média de veículos on-line', 'val': '1', 'cor': const Color(0xFF35D49A)},
-      {'title': 'Consumo de combustível', 'val': '0,00 km/l', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Ocioso por dia', 'val': '22h 39min', 'cor': const Color(0xFF94A3B8)},
-      {'title': 'Average work time in day', 'val': '1h 19min', 'cor': const Color(0xFF38BDF8)},
-      {'title': 'Average mileage in period', 'val': '13,80 km', 'cor': const Color(0xFF35D49A)},
-      {'title': 'Km costs', 'val': '0', 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Amount of expenses', 'val': _stats.expenses, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Idle time', 'val': _stats.idleTime, 'cor': const Color(0xFF94A3B8)},
+      {'title': 'Ignition time', 'val': _stats.ignitionTime, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Combustível consumido', 'val': _stats.fuelConsumed, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Duração de estacionamento', 'val': _stats.parkingDuration, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Driving time', 'val': _stats.drivingTime, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Driving distance', 'val': _stats.drivingDistance, 'cor': const Color(0xFF35D49A)},
+      {'title': 'Número do veículo', 'val': _stats.plate, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Modelo', 'val': _stats.model, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'ano de lançamento', 'val': _stats.year, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Código VIN', 'val': _stats.vin, 'cor': const Color(0xFF94A3B8)},
+      {'title': 'número do motor', 'val': _stats.motorNumber, 'cor': const Color(0xFF94A3B8)},
+      {'title': 'Tipo de dispositivo', 'val': _stats.deviceType, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Período', 'val': _stats.period, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Número de viagens', 'val': _stats.tripsCount.toString(), 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Combustível abastecido', 'val': _stats.fuelFilled, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Combustível drenado', 'val': _stats.fuelDrained, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Média de veículos on-line', 'val': _stats.onlineCarsAvg.toString(), 'cor': const Color(0xFF35D49A)},
+      {'title': 'Consumo de combustível', 'val': _stats.fuelConsumption, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Ocioso em uma linha por dia', 'val': _stats.idleTimePerDay, 'cor': const Color(0xFF94A3B8)},
+      {'title': 'Average work time in day', 'val': _stats.avgWorkTimeInDay, 'cor': const Color(0xFF38BDF8)},
+      {'title': 'Average mileage in period', 'val': _stats.avgMileageInPeriod, 'cor': const Color(0xFF35D49A)},
+      {'title': 'Km costs', 'val': _stats.kmCosts, 'cor': const Color(0xFF38BDF8)},
     ];
 
     return LayoutBuilder(
@@ -438,9 +477,9 @@ class _DashboardViewState extends State<DashboardView> {
           chart: CustomPaint(
             size: const Size(130, 130),
             painter: _DonutChartPainter(
-              lowRatio: 1.0, // < 60 km/h: 100%
-              midRatio: 0.0, // 60 - 90 km/h: 0%
-              highRatio: 0.0, // > 90 km/h: 0%
+              lowRatio: _stats.speedLowRatioKm,
+              midRatio: _stats.speedMidRatioKm,
+              highRatio: _stats.speedHighRatioKm,
             ),
           ),
         );
@@ -450,9 +489,9 @@ class _DashboardViewState extends State<DashboardView> {
           chart: CustomPaint(
             size: const Size(130, 130),
             painter: _DonutChartPainter(
-              lowRatio: 0.96, // < 60 km/h: 96%
-              midRatio: 0.04, // 60 - 90 km/h: 4%
-              highRatio: 0.0, // > 90 km/h: 0%
+              lowRatio: _stats.speedLowRatioTime,
+              midRatio: _stats.speedMidRatioTime,
+              highRatio: _stats.speedHighRatioTime,
             ),
           ),
         );
@@ -498,9 +537,9 @@ class _DashboardViewState extends State<DashboardView> {
             children: [
               _buildLegendItem('< 60 km/h', const Color(0xFF38BDF8)),
               const SizedBox(width: 14),
-              _buildLegendItem('60 - 90 km/h', const Color(0xFF818CF8)),
+              _buildLegendItem('60 - 90 km/h', const Color(0xFF6366F1)),
               const SizedBox(width: 14),
-              _buildLegendItem('> 90 km/h', const Color(0xFF34D399)),
+              _buildLegendItem('> 90 km/h', const Color(0xFF35D49A)),
             ],
           ),
         ],
@@ -512,58 +551,127 @@ class _DashboardViewState extends State<DashboardView> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 5),
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
         Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5)),
       ],
     );
   }
 
-  // VEHICLE GRAPHS (BAR CHARTS POR DIA)
+  // VEHICLE GRAPHS (DIAS)
   Widget _buildVehicleGraphsRow() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isMulti = constraints.maxWidth >= 700;
+        final isRow = constraints.maxWidth >= 700;
 
-        final graph1 = _buildBarGraphCard('Cars on line, Cars', '1', '29.10', 1.0, 2.0);
-        final graph2 = _buildBarGraphCard('Driving distance, km', '13.8 km', '29.10', 13.8, 16.0);
-        final graph3 = _buildBarGraphCard('Driving time, horas', '1.2 h', '29.10', 1.2, 4.0);
-        final graph4 = _buildBarGraphCard('Combustível consumido, l', '0.00 l', '29.10', 0.0, 10.0);
-
-        if (isMulti) {
-          return Column(
+        final graphCarsOnLine = _buildGraphCard(
+          title: 'Cars on line, Cars',
+          child: Column(
             children: [
               Row(
-                children: [
-                  Expanded(child: graph1),
-                  const SizedBox(width: 12),
-                  Expanded(child: graph2),
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text('2', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                  Text('', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+              Container(
+                height: 50,
+                alignment: Alignment.center,
+                child: Row(
+                  children: [
+                    const Text('1', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        height: 2,
+                        color: const Color(0xFF1E293B),
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(color: Color(0xFF38BDF8), shape: BoxShape.circle),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('0', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                  Text('29.10', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ],
+          ),
+        );
+
+        final graphDistance = _buildGraphCard(
+          title: 'Driving distance, km',
+          child: Column(
+            children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(child: graph3),
-                  const SizedBox(width: 12),
-                  Expanded(child: graph4),
+                  const Text('16', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                  Text('${_stats.dailyDrivingDistance} km', style: const TextStyle(color: Color(0xFF35D49A), fontSize: 11, fontWeight: FontWeight.bold)),
                 ],
               ),
+              const SizedBox(height: 10),
+              Container(
+                height: 50,
+                alignment: Alignment.center,
+                child: Row(
+                  children: [
+                    const Text('12', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        height: 2,
+                        color: const Color(0xFF1E293B),
+                        child: Align(
+                          alignment: const Alignment(0.0, -0.6),
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(color: Color(0xFF35D49A), shape: BoxShape.circle),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('0', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                  Text('29.10', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ],
+          ),
+        );
+
+        if (isRow) {
+          return Row(
+            children: [
+              Expanded(child: graphCarsOnLine),
+              const SizedBox(width: 14),
+              Expanded(child: graphDistance),
             ],
           );
         } else {
           return Column(
             children: [
-              graph1,
-              const SizedBox(height: 10),
-              graph2,
-              const SizedBox(height: 10),
-              graph3,
-              const SizedBox(height: 10),
-              graph4,
+              graphCarsOnLine,
+              const SizedBox(height: 12),
+              graphDistance,
             ],
           );
         }
@@ -571,9 +679,9 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  Widget _buildBarGraphCard(String title, String currentVal, String dayLabel, double val, double maxVal) {
+  Widget _buildGraphCard({required String title, required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF111A23),
         borderRadius: BorderRadius.circular(10),
@@ -582,126 +690,67 @@ class _DashboardViewState extends State<DashboardView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-              Text(currentVal, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 14),
-          // Gráfico de barra simples
-          SizedBox(
-            height: 90,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Eixo Y
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${maxVal.toInt()}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 9)),
-                    Text('${(maxVal / 2).toInt()}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 9)),
-                    const Text('0', style: TextStyle(color: Color(0xFF64748B), fontSize: 9)),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                // Área da barra
-                Expanded(
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      // Linhas de Grade
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(height: 1, color: const Color(0xFF1E293B)),
-                          Container(height: 1, color: const Color(0xFF1E293B)),
-                          Container(height: 1, color: const Color(0xFF334155)),
-                        ],
-                      ),
-                      // Barra preenchida
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: FractionallySizedBox(
-                          heightFactor: maxVal > 0 ? (val / maxVal).clamp(0.05, 1.0) : 0.05,
-                          widthFactor: 0.18,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7),
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0284C7).withValues(alpha: 0.5),
-                                  blurRadius: 6,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          Center(
-            child: Text(dayLabel, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
-          ),
+          Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          child,
         ],
       ),
     );
   }
 
-  // RODAPÉ DE SINCRONIZAÇÃO & EXPORTAR
+  // RODAPÉ COM SYNC & EXPORT
   Widget _buildFooter() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF111A23),
+        color: Color(0xFF0F1722),
         border: Border(top: BorderSide(color: Color(0xFF1E293B))),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E293B),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          InkWell(
+            onTap: _isSyncing ? null : _syncData,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _isSyncing
+                      ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)))
+                      : const Icon(Icons.sync, color: Color(0xFF38BDF8), size: 14),
+                  const SizedBox(width: 6),
+                  const Text('Sync now', style: TextStyle(color: Colors.white, fontSize: 11)),
+                ],
+              ),
             ),
-            icon: _isSyncing
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF1E2D)),
-                  )
-                : const Icon(Icons.sync, size: 16, color: Color(0xFF38BDF8)),
-            label: const Text('Sync now', style: TextStyle(fontSize: 11)),
-            onPressed: _isSyncing ? null : _syncData,
           ),
-          const SizedBox(width: 12),
           Text(
-            'Last sync\'d at $_lastSync',
+            'Last sync\'d at ${_stats.lastSyncFormatted}',
             style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
           ),
-          const Spacer(),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1E293B),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+                side: const BorderSide(color: Color(0xFF334155)),
+              ),
             ),
-            icon: const Icon(Icons.download, size: 16, color: Color(0xFF35D49A)),
+            icon: const Icon(Icons.download, size: 14),
             label: const Text('Exportar', style: TextStyle(fontSize: 11)),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Relatório de dados exportado com sucesso (CSV / Excel).'),
+                  content: Text('Exportação gerada com sucesso!'),
                   backgroundColor: Color(0xFF1E293B),
                 ),
               );
@@ -713,11 +762,11 @@ class _DashboardViewState extends State<DashboardView> {
   }
 }
 
-// PINTOR CUSTOMIZADO DO DONUT CHART (SPEED PIES)
+// PINTOR DO GRÁFICO DONUT (SPEED PIES)
 class _DonutChartPainter extends CustomPainter {
-  final double lowRatio;
-  final double midRatio;
-  final double highRatio;
+  final double lowRatio; // < 60 km/h
+  final double midRatio; // 60 - 90 km/h
+  final double highRatio; // > 90 km/h
 
   _DonutChartPainter({
     required this.lowRatio,
@@ -731,48 +780,62 @@ class _DonutChartPainter extends CustomPainter {
     final radius = size.width / 2;
     const strokeWidth = 24.0;
 
-    final lowPaint = Paint()
-      ..color = const Color(0xFF38BDF8)
+    final basePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 
-    final midPaint = Paint()
-      ..color = const Color(0xFF818CF8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    final highPaint = Paint()
-      ..color = const Color(0xFF34D399)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    final rect = Rect.fromCircle(center: center, radius: radius - (strokeWidth / 2));
+    // Fundo cinza suave caso ratios somem 0
+    basePaint.color = const Color(0xFF1E293B);
+    canvas.drawCircle(center, radius - (strokeWidth / 2), basePaint);
 
     double startAngle = -math.pi / 2;
 
     // Arco < 60 km/h
-    final sweepLow = 2 * math.pi * lowRatio;
-    if (sweepLow > 0) {
-      canvas.drawArc(rect, startAngle, sweepLow, false, lowPaint);
-      startAngle += sweepLow;
+    if (lowRatio > 0) {
+      final sweepAngle = lowRatio * 2 * math.pi;
+      basePaint.color = const Color(0xFF38BDF8);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius - (strokeWidth / 2)),
+        startAngle,
+        sweepAngle,
+        false,
+        basePaint,
+      );
+      startAngle += sweepAngle;
     }
 
     // Arco 60 - 90 km/h
-    final sweepMid = 2 * math.pi * midRatio;
-    if (sweepMid > 0) {
-      canvas.drawArc(rect, startAngle, sweepMid, false, midPaint);
-      startAngle += sweepMid;
+    if (midRatio > 0) {
+      final sweepAngle = midRatio * 2 * math.pi;
+      basePaint.color = const Color(0xFF6366F1);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius - (strokeWidth / 2)),
+        startAngle,
+        sweepAngle,
+        false,
+        basePaint,
+      );
+      startAngle += sweepAngle;
     }
 
     // Arco > 90 km/h
-    final sweepHigh = 2 * math.pi * highRatio;
-    if (sweepHigh > 0) {
-      canvas.drawArc(rect, startAngle, sweepHigh, false, highPaint);
+    if (highRatio > 0) {
+      final sweepAngle = highRatio * 2 * math.pi;
+      basePaint.color = const Color(0xFF35D49A);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius - (strokeWidth / 2)),
+        startAngle,
+        sweepAngle,
+        false,
+        basePaint,
+      );
     }
   }
 
   @override
   bool shouldRepaint(covariant _DonutChartPainter oldDelegate) {
-    return oldDelegate.lowRatio != lowRatio || oldDelegate.midRatio != midRatio || oldDelegate.highRatio != highRatio;
+    return oldDelegate.lowRatio != lowRatio ||
+        oldDelegate.midRatio != midRatio ||
+        oldDelegate.highRatio != highRatio;
   }
 }

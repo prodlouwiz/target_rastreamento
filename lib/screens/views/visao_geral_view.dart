@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../map_screen.dart' show VeiculoInfo;
+
 class VisaoGeralView extends StatelessWidget {
+  final VeiculoInfo? veiculo;
   final String plate;
   final String model;
   final String clientName;
@@ -8,6 +11,7 @@ class VisaoGeralView extends StatelessWidget {
 
   const VisaoGeralView({
     super.key,
+    this.veiculo,
     this.plate = 'MQA6E92',
     this.model = 'Chevrolet Corsa 2020',
     this.clientName = 'Vidal Rastreamento',
@@ -124,14 +128,20 @@ class VisaoGeralView extends StatelessWidget {
 
   // 4 STAT CARDS RESPONSIVOS
   Widget _buildStatCards(bool isDesktop) {
+    final isMoving = veiculo != null && veiculo!.velocidade > 0;
+    final movingCount = isMoving ? '01' : '00';
+    final movingSub = isMoving ? '● ${veiculo!.velocidade} km/h em rota' : '● 0 em rota agora';
+    final parkingCount = isMoving ? '00' : '01';
+    final parkingSub = isMoving ? '0 estacionados' : 'Estacionado em segurança';
+
     if (isDesktop) {
       return Row(
         children: [
           Expanded(child: _buildStatCard('Veículos cadastrados', '01', '1 ativo no período', Icons.directions_car, null)),
           const SizedBox(width: 12),
-          Expanded(child: _buildStatCard('Em movimento', '00', '● 0 em rota agora', Icons.timeline, const Color(0xFF35D49A))),
+          Expanded(child: _buildStatCard('Em movimento', movingCount, movingSub, Icons.timeline, const Color(0xFF35D49A))),
           const SizedBox(width: 12),
-          Expanded(child: _buildStatCard('Parados', '01', 'Estacionado em segurança', Icons.local_parking, const Color(0xFFFFB300))),
+          Expanded(child: _buildStatCard('Parados', parkingCount, parkingSub, Icons.local_parking, const Color(0xFFFFB300))),
           const SizedBox(width: 12),
           Expanded(child: _buildStatCard('Alertas pendentes', '00', 'Sistema operacional', Icons.notifications_active, const Color(0xFF35D49A))),
         ],
@@ -143,13 +153,13 @@ class VisaoGeralView extends StatelessWidget {
             children: [
               Expanded(child: _buildStatCard('Veículos', '01', '1 cadastrado', Icons.directions_car, null)),
               const SizedBox(width: 10),
-              Expanded(child: _buildStatCard('Em movimento', '00', '0 em rota', Icons.timeline, const Color(0xFF35D49A))),
+              Expanded(child: _buildStatCard('Em movimento', movingCount, movingSub, Icons.timeline, const Color(0xFF35D49A))),
             ],
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _buildStatCard('Parados', '01', 'Estacionado', Icons.local_parking, const Color(0xFFFFB300))),
+              Expanded(child: _buildStatCard('Parados', parkingCount, parkingSub, Icons.local_parking, const Color(0xFFFFB300))),
               const SizedBox(width: 10),
               Expanded(child: _buildStatCard('Alertas', '00', 'Operacional', Icons.notifications_active, const Color(0xFF35D49A))),
             ],

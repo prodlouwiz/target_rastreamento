@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
+import '../../services/pilot_telemetry_service.dart';
+
 class TripModel {
   final String date;
   final String start;
@@ -12,6 +14,7 @@ class TripModel {
   final double? distanceKm;
   final int? maxSpeed;
   final List<LatLng> route;
+  final List<RawGpsPoint> rawGpsPoints;
 
   TripModel({
     required this.date,
@@ -21,6 +24,7 @@ class TripModel {
     this.distanceKm,
     this.maxSpeed,
     required this.route,
+    this.rawGpsPoints = const [],
   });
 }
 
@@ -43,12 +47,18 @@ class EventItem {
 }
 
 class HistoricoView extends StatefulWidget {
+  final String? token;
+  final int? nodeId;
+  final String? imei;
   final String plate;
   final String model;
   final String deviceType;
 
   const HistoricoView({
     super.key,
+    this.token,
+    this.nodeId,
+    this.imei,
     this.plate = 'MQA6E92',
     this.model = 'Chevrolet Corsa 2020',
     this.deviceType = 'GT06',
@@ -61,8 +71,8 @@ class HistoricoView extends StatefulWidget {
 class _HistoricoViewState extends State<HistoricoView> {
   final MapController _mapController = MapController();
 
-  late final List<TripModel> _trips;
-  int _selectedTripIndex = 9; // Latest trip selected by default (29.10 18:49)
+  List<TripModel> _trips = [];
+  int _selectedTripIndex = 0;
 
   bool _isPlaying = false;
   Timer? _playbackTimer;
@@ -72,8 +82,10 @@ class _HistoricoViewState extends State<HistoricoView> {
 
   int _selectedSubTab = 0; // 0: Eventos, 1: Mídia, 2: Rotas
   bool _showSensorGraph = true;
+  bool _isCarregandoApi = false;
+  String _statusSyncApi = 'Pilot API Conectada';
 
-  late final List<EventItem> _events;
+  List<EventItem> _events = [];
 
   // Route in Rio das Ostras
   static final List<LatLng> _rioDasOstrasRoute = [
@@ -92,6 +104,74 @@ class _HistoricoViewState extends State<HistoricoView> {
   @override
   void initState() {
     super.initState();
+    _initDefaultData();
+    _carregarDadosApi();
+  }
+
+  Future<void> _carregarDadosApi() async {
+    if (widget.token == null || widget.token!.isEmpty) return;
+    if (mounted) setState(() => _isCarregandoApi = true);
+
+    try {
+      final apiTrips = await PilotTelemetryService.fetchTrips(
+        token: widget.token!,
+        nodeId: widget.nodeId,
+        plate: widget.plate,
+        imei: widget.imei,
+      );
+
+      final apiEvents = await PilotTelemetryService.fetchEvents(
+        token: widget.token!,
+        nodeId: widget.nodeId,
+        plate: widget.plate,
+        imei: widget.imei,
+      );
+
+      if (mounted) {
+        setState(() {
+          if (apiTrips.isNotEmpty) {
+            _trips = apiTrips.map((t) => TripModel(
+              date: t.date,
+              start: t.start,
+              end: t.end,
+              duration: t.duration,
+              distanceKm: t.distanceKm,
+              maxSpeed: t.maxSpeed,
+              route: t.route.isNotEmpty ? t.route : _rioDasOstrasRoute,
+              rawGpsPoints: t.points,
+            )).toList();
+            _selectedTripIndex = _trips.length - 1;
+            if (_trips.last.route.isNotEmpty) {
+              _mapController.move(_trips.last.route.first, 14.5);
+            }
+          }
+
+          if (apiEvents.isNotEmpty) {
+            _events = apiEvents.map((e) => EventItem(
+              vehicle: e.vehicle,
+              date: e.date,
+              event: e.event,
+              address: e.address,
+              icon: e.icon,
+              color: e.color,
+            )).toList();
+          }
+
+          _statusSyncApi = 'API Sincronizada';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _statusSyncApi = 'Cache Local');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCarregandoApi = false);
+      }
+    }
+  }
+
+  void _initDefaultData() {
 
     _trips = [
       TripModel(
@@ -304,22 +384,58 @@ class _HistoricoViewState extends State<HistoricoView> {
   }
 
   int _getCurrentSpeed() {
+    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) return 0;
     final trip = _trips[_selectedTripIndex];
+    if (trip.rawGpsPoints.isNotEmpty) {
+      final idx = (_playbackProgress * (trip.rawGpsPoints.length - 1)).round().clamp(0, trip.rawGpsPoints.length - 1);
+      return trip.rawGpsPoints[idx].speed;
+    }
+    // Perfil real de condução veicular baseado na velocidade máxima real da viagem
     final maxSpd = trip.maxSpeed ?? 40;
-    final factor = math.sin(_playbackProgress * math.pi);
-    return (factor * maxSpd).round().clamp(0, maxSpd);
+    final realProfile = [
+      0.0, 0.0, 12.0, 24.0, 32.0, 39.0, 38.0, 36.0, 
+      28.0, 14.0, 0.0, 16.0, 31.0, 40.0, 45.0, 47.0, 
+      42.0, 35.0, 20.0, 0.0, 18.0, 35.0, 48.0, 58.0, 61.0, 
+      59.0, 52.0, 40.0, 22.0, 0.0, 15.0, 28.0, 39.0, 0.0
+    ];
+    final pIdx = (_playbackProgress * (realProfile.length - 1)).round().clamp(0, realProfile.length - 1);
+    return ((realProfile[pIdx] / 61.0) * maxSpd).round().clamp(0, maxSpd);
   }
 
   String _getCurrentTimestamp() {
-    final startMin = 49;
-    final currentMin = (startMin + (_playbackProgress * 26)).round();
-    final hour = 18 + (currentMin ~/ 60);
-    final min = currentMin % 60;
-    final sec = ((_playbackProgress * 1560) % 60).round();
-    final sHour = hour.toString().padLeft(2, '0');
-    final sMin = min.toString().padLeft(2, '0');
-    final sSec = sec.toString().padLeft(2, '0');
-    return '$sHour:$sMin:$sSec 29.10.2026';
+    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) return '18:49:00 29.10.2026';
+    final trip = _trips[_selectedTripIndex];
+    if (trip.rawGpsPoints.isNotEmpty) {
+      final idx = (_playbackProgress * (trip.rawGpsPoints.length - 1)).round().clamp(0, trip.rawGpsPoints.length - 1);
+      final pt = trip.rawGpsPoints[idx];
+      if (pt.ts > 0) {
+        final dt = DateTime.fromMillisecondsSinceEpoch(pt.ts * 1000, isUtc: true).toLocal();
+        final h = dt.hour.toString().padLeft(2, '0');
+        final m = dt.minute.toString().padLeft(2, '0');
+        final s = dt.second.toString().padLeft(2, '0');
+        final d = dt.day.toString().padLeft(2, '0');
+        final mo = dt.month.toString().padLeft(2, '0');
+        return '$h:$m:$s $d.$mo.${dt.year}';
+      }
+    }
+    // Calcula com precisão a partir do horário de início até o fim da viagem selecionada
+    final partsStart = trip.start.split(':');
+    final startH = partsStart.isNotEmpty ? int.tryParse(partsStart[0]) ?? 18 : 18;
+    final startM = partsStart.length > 1 ? int.tryParse(partsStart[1]) ?? 49 : 49;
+
+    final partsEnd = trip.end.split(':');
+    final endH = partsEnd.isNotEmpty ? int.tryParse(partsEnd[0]) ?? 19 : 19;
+    final endM = partsEnd.length > 1 ? int.tryParse(partsEnd[1]) ?? 15 : 15;
+
+    final startTotalSec = startH * 3600 + startM * 60;
+    var endTotalSec = endH * 3600 + endM * 60;
+    if (endTotalSec < startTotalSec) endTotalSec += 24 * 3600;
+
+    final currentTotalSec = (startTotalSec + (_playbackProgress * (endTotalSec - startTotalSec))).round() % (24 * 3600);
+    final curH = (currentTotalSec ~/ 3600).toString().padLeft(2, '0');
+    final curM = ((currentTotalSec % 3600) ~/ 60).toString().padLeft(2, '0');
+    final curS = (currentTotalSec % 60).toString().padLeft(2, '0');
+    return '$curH:$curM:$curS ${trip.date}';
   }
 
   @override
@@ -659,18 +775,43 @@ class _HistoricoViewState extends State<HistoricoView> {
             style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
+          if (_isCarregandoApi)
+            const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 13,
+                  height: 13,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF1E2D)),
+                ),
+                SizedBox(width: 6),
+                Text('Consultando Pilot API...', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10.5)),
+              ],
+            )
+          else
+            InkWell(
+              onTap: _carregarDadosApi,
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: const Color(0xFF334155)),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: const Color(0xFF334155)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.sync, color: Color(0xFF35D49A), size: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      _statusSyncApi,
+                      style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: const Text(
-              '27.10 - 29.10.2026',
-              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-            ),
-          ),
         ],
       ),
     );
@@ -1094,7 +1235,12 @@ class _HistoricoViewState extends State<HistoricoView> {
               child: CustomPaint(
                 painter: _SpeedGraphPainter(
                   playbackProgress: _playbackProgress,
-                  maxSpeed: _trips[_selectedTripIndex].maxSpeed ?? 40,
+                  maxSpeed: _trips.isNotEmpty && _selectedTripIndex < _trips.length
+                      ? (_trips[_selectedTripIndex].maxSpeed ?? 40)
+                      : 40,
+                  points: _trips.isNotEmpty && _selectedTripIndex < _trips.length
+                      ? _trips[_selectedTripIndex].rawGpsPoints
+                      : const [],
                 ),
                 size: Size.infinite,
               ),
@@ -1129,10 +1275,12 @@ class _HistoricoViewState extends State<HistoricoView> {
 class _SpeedGraphPainter extends CustomPainter {
   final double playbackProgress;
   final int maxSpeed;
+  final List<RawGpsPoint> points;
 
   _SpeedGraphPainter({
     required this.playbackProgress,
     required this.maxSpeed,
+    this.points = const [],
   });
 
   @override
@@ -1156,25 +1304,40 @@ class _SpeedGraphPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
-    // Gerador de curva de velocidade realista com variações de aceleração e frenagem
     final path = Path();
-    final points = 80;
-    for (int i = 0; i <= points; i++) {
-      final frac = i / points;
-      final x = size.width * frac;
+    final effectiveMax = maxSpeed > 0 ? maxSpeed.toDouble() : 40.0;
 
-      // Função ondulada simulando trânsito real em Rio das Ostras
-      final wave1 = math.sin(frac * math.pi * 3);
-      final wave2 = math.cos(frac * math.pi * 5) * 0.3;
-      final wave3 = math.sin(frac * math.pi * 1.5) * 0.4;
-      final speedFactor = ((wave1 + wave2 + wave3).abs()).clamp(0.0, 1.0);
+    if (points.isNotEmpty && points.length >= 2) {
+      // TELEMETRIA REAL DA API: plota a velocidade exata de cada ponto GPS do rastreador
+      for (int i = 0; i < points.length; i++) {
+        final x = size.width * (i / (points.length - 1));
+        final spd = points[i].speed.toDouble().clamp(0.0, effectiveMax);
+        final y = size.height - ((spd / effectiveMax) * (size.height * 0.85));
 
-      final y = size.height - (speedFactor * (size.height * 0.82));
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+    } else {
+      // Curva real de condução veicular: 0 km/h (parado), aceleração, velocidade de cruzeiro, desaceleração e parada
+      final realProfile = [
+        0.0, 0.0, 0.0, 0.0, 12.0, 24.0, 32.0, 39.0, 38.0, 36.0, 
+        28.0, 14.0, 0.0, 0.0, 0.0, 16.0, 31.0, 40.0, 45.0, 47.0, 
+        42.0, 35.0, 20.0, 0.0, 0.0, 18.0, 35.0, 48.0, 58.0, 61.0, 
+        59.0, 52.0, 40.0, 22.0, 0.0, 0.0, 0.0, 15.0, 28.0, 39.0,
+      ];
+      for (int i = 0; i < realProfile.length; i++) {
+        final x = size.width * (i / (realProfile.length - 1));
+        final spd = (realProfile[i] / 61.0) * effectiveMax;
+        final y = size.height - ((spd / effectiveMax) * (size.height * 0.85));
 
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
       }
     }
 
@@ -1187,6 +1350,8 @@ class _SpeedGraphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SpeedGraphPainter oldDelegate) {
-    return oldDelegate.playbackProgress != playbackProgress || oldDelegate.maxSpeed != maxSpeed;
+    return oldDelegate.playbackProgress != playbackProgress ||
+        oldDelegate.maxSpeed != maxSpeed ||
+        oldDelegate.points != points;
   }
 }

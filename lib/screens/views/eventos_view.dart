@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../services/pilot_telemetry_service.dart';
+
 class EventLogModel {
   final String title;
   final String subtitle;
@@ -26,12 +28,18 @@ class EventLogModel {
 }
 
 class EventosView extends StatefulWidget {
+  final String? token;
+  final int? nodeId;
+  final String? imei;
   final String plate;
   final String model;
   final Function(String coords)? onVerNoMapa;
 
   const EventosView({
     super.key,
+    this.token,
+    this.nodeId,
+    this.imei,
     this.plate = 'MQA6E92',
     this.model = 'Chevrolet Corsa 2020',
     this.onVerNoMapa,
@@ -45,13 +53,20 @@ class _EventosViewState extends State<EventosView> {
   String _selectedCategory = 'todos';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = false;
 
-  late final List<EventLogModel> _allEvents;
+  late List<EventLogModel> _allEvents;
 
   @override
   void initState() {
     super.initState();
+    _initDefaultEvents();
+    if (widget.token != null && widget.token!.isNotEmpty) {
+      _carregarEventosApi();
+    }
+  }
 
+  void _initDefaultEvents() {
     _allEvents = [
       EventLogModel(
         title: 'Alimentação Externa Conectada',
@@ -150,137 +165,165 @@ class _EventosViewState extends State<EventosView> {
         coords: '-22.50563, -41.93202',
         icon: Icons.battery_charging_full,
         color: const Color(0xFF35D49A),
-        status: 'Bateria',
-      ),
-      EventLogModel(
-        title: 'Comando Remoto: Verificação de Status',
-        subtitle: 'Ping e sincronização de telemetria concluídos com sucesso',
-        category: 'energia',
-        timestamp: '18:25:00 · 27/10/2026',
-        address: 'Rio das Ostras - RJ',
-        coords: '-22.50563, -41.93202',
-        icon: Icons.check_circle_outline,
-        color: const Color(0xFF38BDF8),
-        status: 'Telemetria',
+        status: 'Normal',
       ),
     ];
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Future<void> _carregarEventosApi() async {
+    if (widget.token == null || widget.token!.isEmpty) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final apiEvents = await PilotTelemetryService.fetchEvents(
+        token: widget.token!,
+        nodeId: widget.nodeId,
+        plate: widget.plate,
+        imei: widget.imei,
+      );
+
+      if (mounted && apiEvents.isNotEmpty) {
+        setState(() {
+          _allEvents = apiEvents.map((e) {
+            String cat = 'ignicao';
+            final evLow = e.event.toLowerCase();
+            if (evLow.contains('power') || evLow.contains('bater') || evLow.contains('energia')) {
+              cat = 'energia';
+            } else if (evLow.contains('cerca') || evLow.contains('fence')) {
+              cat = 'cerca';
+            } else if (evLow.contains('veloc') || evLow.contains('speed')) {
+              cat = 'velocidade';
+            }
+
+            return EventLogModel(
+              title: e.event,
+              subtitle: 'Evento registrado pela telemetria Pilot GPS',
+              category: cat,
+              timestamp: e.date,
+              address: e.address,
+              coords: e.coords,
+              icon: e.icon,
+              color: e.color,
+              status: 'Oficial',
+            );
+          }).toList();
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   List<EventLogModel> get _filteredEvents {
     return _allEvents.where((e) {
-      final matchesCategory = (_selectedCategory == 'todos' || e.category == _selectedCategory);
-      final query = _searchQuery.toLowerCase().trim();
-      final matchesSearch = query.isEmpty ||
-          e.title.toLowerCase().contains(query) ||
-          e.subtitle.toLowerCase().contains(query) ||
-          e.address.toLowerCase().contains(query);
+      final matchesCategory = _selectedCategory == 'todos' || e.category == _selectedCategory;
+      final matchesSearch = _searchQuery.isEmpty ||
+          e.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          e.address.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          e.subtitle.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredEvents;
-
     return Scaffold(
       backgroundColor: const Color(0xFF0B1117),
       body: Column(
         children: [
-          // 1. Barra Superior de Filtros & Busca
-          _buildFilterBar(),
+          // 1. Barra Superior com Título, Busca e Filtro de Categoria
+          _buildTopBar(),
 
-          // 2. Chips de Categorias
-          _buildCategoryChips(),
+          // 2. Chips de Filtro Rápido
+          _buildFilterChips(),
 
-          // 3. Lista Cronológica de Eventos
+          // 3. Lista de Eventos Cronológicos
           Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.event_busy, color: Color(0xFF334155), size: 48),
-                        const SizedBox(height: 12),
-                        const Text('Nenhum evento encontrado para o filtro atual.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final item = filtered[index];
-                      return _buildEventCard(item);
-                    },
-                  ),
+            child: _buildEventsList(),
           ),
         ],
       ),
     );
   }
 
-  // BARRA DE BUSCA
-  Widget _buildFilterBar() {
+  // BARRA SUPERIOR
+  Widget _buildTopBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      color: const Color(0xFF111A23),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFF111A23),
+        border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+      ),
       child: Row(
         children: [
           const Icon(Icons.notifications_active_outlined, color: Color(0xFFFF1E2D), size: 20),
           const SizedBox(width: 8),
-          const Text(
-            'Eventos & Alarmes',
-            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: SizedBox(
-              height: 36,
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white, fontSize: 12),
-                decoration: InputDecoration(
-                  hintText: 'Filtrar por endereço, status ou evento...',
-                  hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                  prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF64748B)),
-                  filled: true,
-                  fillColor: const Color(0xFF1E293B),
-                  contentPadding: EdgeInsets.zero,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                onChanged: (val) {
-                  setState(() => _searchQuery = val);
-                },
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Log de Eventos do Rastreador',
+                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
               ),
+              Text(
+                '${widget.plate} · ${widget.model}',
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+              ),
+            ],
+          ),
+          const Spacer(),
+          // Campo de Busca
+          Container(
+            width: 220,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFF334155)),
             ),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+              decoration: const InputDecoration(
+                hintText: 'Buscar evento ou rua...',
+                hintStyle: TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
+                prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8), size: 16),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 8),
+              ),
+              onChanged: (val) => setState(() => _searchQuery = val),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: _isLoading
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)))
+                : const Icon(Icons.refresh, color: Color(0xFF94A3B8), size: 20),
+            tooltip: 'Sincronizar Eventos',
+            onPressed: _carregarEventosApi,
           ),
         ],
       ),
     );
   }
 
-  // CHIPS DE CATEGORIAS
-  Widget _buildCategoryChips() {
+  // CHIPS DE FILTRO RÁPIDO
+  Widget _buildFilterChips() {
     final categories = [
-      {'id': 'todos', 'label': 'Todos (${_allEvents.length})'},
-      {'id': 'ignicao', 'label': 'Ignição (${_allEvents.where((e) => e.category == 'ignicao').length})'},
-      {'id': 'energia', 'label': 'Alimentação (${_allEvents.where((e) => e.category == 'energia').length})'},
-      {'id': 'cerca', 'label': 'Cercas (${_allEvents.where((e) => e.category == 'cerca').length})'},
-      {'id': 'velocidade', 'label': 'Velocidade (${_allEvents.where((e) => e.category == 'velocidade').length})'},
+      {'id': 'todos', 'label': 'Todos os Eventos'},
+      {'id': 'ignicao', 'label': 'Ignição (ACC)'},
+      {'id': 'cerca', 'label': 'Cercas Virtuais'},
+      {'id': 'energia', 'label': 'Alimentação / Bateria'},
+      {'id': 'velocidade', 'label': 'Velocidade'},
     ];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: const Color(0xFF111A23),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F1722),
+        border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -288,24 +331,21 @@ class _EventosViewState extends State<EventosView> {
             final isSelected = _selectedCategory == cat['id'];
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                selected: isSelected,
+              child: ChoiceChip(
                 label: Text(
                   cat['label']!,
                   style: TextStyle(
                     color: isSelected ? Colors.white : const Color(0xFF94A3B8),
-                    fontSize: 11,
+                    fontSize: 11.5,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
-                backgroundColor: const Color(0xFF1E293B),
+                selected: isSelected,
                 selectedColor: const Color(0xFFFF1E2D),
-                checkmarkColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                backgroundColor: const Color(0xFF1E293B),
                 side: BorderSide(color: isSelected ? const Color(0xFFFF1E2D) : const Color(0xFF334155)),
-                onSelected: (_) {
-                  setState(() => _selectedCategory = cat['id']!);
-                },
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                onSelected: (_) => setState(() => _selectedCategory = cat['id']!),
               ),
             );
           }).toList(),
@@ -314,127 +354,169 @@ class _EventosViewState extends State<EventosView> {
     );
   }
 
-  // CARD DE EVENTO
-  Widget _buildEventCard(EventLogModel item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111A23),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF1E293B)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Ícone com fundo colorido
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: item.color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: item.color.withValues(alpha: 0.3)),
-              ),
-              child: Icon(item.icon, color: item.color, size: 20),
-            ),
-            const SizedBox(width: 12),
+  // LISTA DE EVENTOS COM TIMELINE E BOTÕES DE AÇÃO
+  Widget _buildEventsList() {
+    final events = _filteredEvents;
 
-            // Informações do Evento
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.title,
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: item.color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: item.color.withValues(alpha: 0.4), width: 0.8),
-                        ),
-                        child: Text(
-                          item.status,
-                          style: TextStyle(color: item.color, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    item.subtitle,
-                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                  ),
-                  const SizedBox(height: 6),
-
-                  // Endereço e Coordenadas
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFFFF1E2D)),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          item.address,
-                          style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Data / Hora e Ações Rápidas
-                  Row(
-                    children: [
-                      Text(
-                        item.timestamp,
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 10, fontFamily: 'monospace'),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        item.coords,
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 10, fontFamily: 'monospace'),
-                      ),
-                      const Spacer(),
-                      // Botão Copiar Coordenadas
-                      InkWell(
-                        onTap: () {
-                          Clipboard.setData(ClipboardData(text: item.coords));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Coordenadas copiadas!'),
-                              backgroundColor: Color(0xFF1E293B),
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          child: Row(
-                            children: [
-                              Icon(Icons.copy, size: 11, color: Color(0xFF38BDF8)),
-                              SizedBox(width: 3),
-                              Text('Copiar', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+    if (events.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.event_busy, color: Color(0xFF64748B), size: 40),
+            SizedBox(height: 10),
+            Text('Nenhum evento encontrado para este filtro', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
           ],
         ),
-      ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: events.length,
+      itemBuilder: (context, index) {
+        final ev = events[index];
+        final isLast = index == events.length - 1;
+
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Linha Vertical da Linha do Tempo
+              SizedBox(
+                width: 36,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: ev.color.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: ev.color, width: 1.5),
+                      ),
+                      child: Icon(ev.icon, color: ev.color, size: 14),
+                    ),
+                    if (!isLast)
+                      Expanded(
+                        child: Container(
+                          width: 2,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Card do Evento
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111A23),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF1E293B)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(ev.title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                            Text(ev.timestamp, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10.5)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(ev.subtitle, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, color: Color(0xFFFF1E2D), size: 13),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                ev.address,
+                                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Copiar Coordenadas
+                            InkWell(
+                              onTap: () {
+                                Clipboard.setData(ClipboardData(text: ev.coords));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Coordenadas copiadas: ${ev.coords}'),
+                                    backgroundColor: const Color(0xFF1E293B),
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(4),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E293B),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: const Color(0xFF334155)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.copy, color: Color(0xFF94A3B8), size: 12),
+                                    const SizedBox(width: 4),
+                                    Text(ev.coords, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Botão Ver no Mapa
+                            InkWell(
+                              onTap: () {
+                                if (widget.onVerNoMapa != null) {
+                                  widget.onVerNoMapa!(ev.coords);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(4),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0284C7).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: const Color(0xFF0284C7)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.map, color: Color(0xFF38BDF8), size: 12),
+                                    SizedBox(width: 4),
+                                    Text('Ver no mapa', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
-

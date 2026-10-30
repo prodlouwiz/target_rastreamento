@@ -853,6 +853,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             children: [
               // Tab 0: Visão Geral (Painel de Controle com Resumo da Operação)
               VisaoGeralView(
+                veiculo: v,
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
                 clientName: 'Vidal Rastreamento',
@@ -866,6 +867,9 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
               // Tab 2: Histórico (Viagens, Rota, Timeline Player e Sensores)
               HistoricoView(
+                token: widget.token,
+                nodeId: widget.nodeId,
+                imei: v?.imei,
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
                 deviceType: 'GT06',
@@ -873,6 +877,10 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
               // Tab 3: Dashboard (Infoblocos, Speed Pies e Gráficos Semanais)
               DashboardView(
+                token: widget.token,
+                nodeId: widget.nodeId,
+                imei: v?.imei,
+                veiculo: v,
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
                 deviceType: 'GT06',
@@ -881,6 +889,9 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
               // Tab 4: Relatórios (Filtros por Data, Gráficos de Velocidade e Exportação)
               RelatoriosView(
+                token: widget.token,
+                nodeId: widget.nodeId,
+                imei: v?.imei,
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
                 clientName: 'Vidal Rastreamento',
@@ -888,6 +899,9 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
               // Tab 5: Eventos (Log Cronológico de Ignição, Cercas e Telemetria)
               EventosView(
+                token: widget.token,
+                nodeId: widget.nodeId,
+                imei: v?.imei,
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
                 onVerNoMapa: (_) {
