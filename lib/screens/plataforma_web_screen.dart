@@ -85,17 +85,17 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen> {
   final List<VeiculoWeb> _veiculos = const [
     VeiculoWeb(
       id: 1,
-      nome: 'Toyota Corolla XEi',
-      placa: 'FGH-3A21',
+      nome: 'Chevrolet Corsa Sedan',
+      placa: 'MQA-6E92',
       tipo: 'Carro',
       icone: Icons.directions_car,
-      status: 'Em movimento',
-      velocidade: 68,
-      local: 'Rua das Acácias, Centro · Macaé',
-      ultimaAtualizacao: 'há 2 min',
+      status: 'Parado',
+      velocidade: 0,
+      local: 'Av. Brasília, Costazul · Rio das Ostras',
+      ultimaAtualizacao: 'há 5 min',
       bateria: '12,6 V',
-      motorista: 'João Silva',
-      unidade: 'Macaé',
+      motorista: 'Vidal Rastreamento',
+      unidade: 'Rio das Ostras',
     ),
     VeiculoWeb(
       id: 2,
@@ -595,7 +595,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen> {
               ),
               child: const Center(
                 child: Text(
-                  'JS',
+                  'VR',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -649,7 +649,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen> {
       children: [
         _buildPageHead(
           eyebrow: 'PAINEL DE CONTROLE',
-          titulo: 'Bom dia, João 👋',
+          titulo: 'Olá, Vidal Rastreamento 👋',
           desc: 'Aqui está um resumo da sua operação e dos veículos monitorados na região.',
           acaoLabel: '＋ Adicionar veículo',
           onAcao: () => _mostrarDialogoConfirmacao(
@@ -662,18 +662,39 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen> {
         ),
         const SizedBox(height: 20),
 
-        // 4 Stat Cards
-        Row(
-          children: [
-            Expanded(child: _buildStatCard('Veículos cadastrados', '05', '4 ativos no período', Icons.directions_car)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildStatCard('Em movimento', '03', '● 3 veículos em rota', Icons.timeline, corDestaque: TargetColors.green)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildStatCard('Parados', '01', 'Sem movimento recente', Icons.local_parking, corDestaque: TargetColors.amber)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildStatCard('Alertas pendentes', '03', 'Requerem atenção', Icons.notifications_active, corDestaque: TargetColors.red)),
-          ],
-        ),
+        // 4 Stat Cards Responsivos (1 linha no Desktop, Grid 2x2 no Celular)
+        if (isDesktop)
+          Row(
+            children: [
+              Expanded(child: _buildStatCard('Veículos cadastrados', '01', '1 ativo no período', Icons.directions_car)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildStatCard('Em movimento', '00', '● 0 em rota agora', Icons.timeline, corDestaque: TargetColors.green)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildStatCard('Parados', '01', 'Estacionado em segurança', Icons.local_parking, corDestaque: TargetColors.amber)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildStatCard('Alertas pendentes', '00', 'Sistema operacional', Icons.notifications_active, corDestaque: TargetColors.green)),
+            ],
+          )
+        else
+          Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _buildStatCard('Veículos', '01', '1 cadastrado', Icons.directions_car)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildStatCard('Em movimento', '00', '0 em rota', Icons.timeline, corDestaque: TargetColors.green)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: _buildStatCard('Parados', '01', 'Estacionado', Icons.local_parking, corDestaque: TargetColors.amber)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildStatCard('Alertas', '00', 'Operacional', Icons.notifications_active, corDestaque: TargetColors.green)),
+                ],
+              ),
+            ],
+          ),
         const SizedBox(height: 24),
 
         // Grid com Mapa Ilustrativo + Lista de Veículos
@@ -704,39 +725,69 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen> {
         _buildSectionTitle('Acesso rápido', 'Atalhos para tarefas frequentes'),
         const SizedBox(height: 14),
 
-        Row(
-          children: [
-            Expanded(
-              child: _buildFeatureCard(
+        // Acesso Rápido Responsivo (1 linha no Desktop, Coluna no Celular)
+        if (isDesktop)
+          Row(
+            children: [
+              Expanded(
+                child: _buildFeatureCard(
+                  icone: Icons.timeline,
+                  titulo: 'Consultar trajetos',
+                  desc: 'Revise percursos e paradas do veículo.',
+                  botao: 'Abrir rotas →',
+                  onTap: () => setState(() => _currentView = 'rotas'),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildFeatureCard(
+                  icone: Icons.notifications_none,
+                  titulo: 'Central de alertas',
+                  desc: 'Veja eventos e notificações recentes.',
+                  botao: 'Ver alertas →',
+                  onTap: () => setState(() => _currentView = 'alertas'),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildFeatureCard(
+                  icone: Icons.bar_chart,
+                  titulo: 'Relatórios operacionais',
+                  desc: 'Acompanhe dados resumidos da frota.',
+                  botao: 'Abrir relatórios →',
+                  onTap: () => setState(() => _currentView = 'relatorios'),
+                ),
+              ),
+            ],
+          )
+        else
+          Column(
+            children: [
+              _buildFeatureCard(
                 icone: Icons.timeline,
                 titulo: 'Consultar trajetos',
                 desc: 'Revise percursos e paradas do veículo.',
                 botao: 'Abrir rotas →',
                 onTap: () => setState(() => _currentView = 'rotas'),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildFeatureCard(
+              const SizedBox(height: 12),
+              _buildFeatureCard(
                 icone: Icons.notifications_none,
                 titulo: 'Central de alertas',
                 desc: 'Veja eventos e notificações recentes.',
                 botao: 'Ver alertas →',
                 onTap: () => setState(() => _currentView = 'alertas'),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildFeatureCard(
+              const SizedBox(height: 12),
+              _buildFeatureCard(
                 icone: Icons.bar_chart,
                 titulo: 'Relatórios operacionais',
                 desc: 'Acompanhe dados resumidos da frota.',
                 botao: 'Abrir relatórios →',
                 onTap: () => setState(() => _currentView = 'relatorios'),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
       ],
     );
   }
@@ -845,7 +896,7 @@ class _PlataformaWebScreenState extends State<PlataformaWebScreen> {
                             boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 10)],
                           ),
                           child: const Text(
-                            '🚘 FGH-3A21 · 68 km/h',
+                            '🚘 MQA-6E92 · Chevrolet Corsa',
                             style: TextStyle(
                               color: Color(0xFF101820),
                               fontSize: 10,

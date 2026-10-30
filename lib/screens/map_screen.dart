@@ -14,6 +14,7 @@ import 'views/dashboard_view.dart';
 import 'views/eventos_view.dart';
 import 'views/historico_view.dart';
 import 'views/relatorios_view.dart';
+import 'views/visao_geral_view.dart';
 
 class SensorInfo {
   final String name;
@@ -850,17 +851,27 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           body: IndexedStack(
             index: _selectedTabIndex,
             children: [
-              // Tab 0: Ao Vivo (Mapa em Tempo Real)
+              // Tab 0: Visão Geral (Painel de Controle com Resumo da Operação)
+              VisaoGeralView(
+                plate: v?.placa ?? 'MQA6E92',
+                model: 'Chevrolet Corsa 2020',
+                clientName: 'Vidal Rastreamento',
+                onNavigateTab: (targetIdx) {
+                  setState(() => _selectedTabIndex = targetIdx);
+                },
+              ),
+
+              // Tab 1: Ao Vivo (Mapa em Tempo Real & Bloqueio)
               _buildLiveMapTab(v, bottomPadding),
 
-              // Tab 1: Histórico (Viagens, Rota, Timeline Player e Sensores)
+              // Tab 2: Histórico (Viagens, Rota, Timeline Player e Sensores)
               HistoricoView(
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
                 deviceType: 'GT06',
               ),
 
-              // Tab 2: Dashboard (Infoblocos, Speed Pies e Gráficos Semanais)
+              // Tab 3: Dashboard (Infoblocos, Speed Pies e Gráficos Semanais)
               DashboardView(
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
@@ -868,19 +879,19 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 clientName: 'Vidal Rastreamento',
               ),
 
-              // Tab 3: Relatórios (Filtros por Data, Gráficos de Velocidade e Exportação)
+              // Tab 4: Relatórios (Filtros por Data, Gráficos de Velocidade e Exportação)
               RelatoriosView(
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
                 clientName: 'Vidal Rastreamento',
               ),
 
-              // Tab 4: Eventos (Log Cronológico de Ignição, Cercas e Telemetria)
+              // Tab 5: Eventos (Log Cronológico de Ignição, Cercas e Telemetria)
               EventosView(
                 plate: v?.placa ?? 'MQA6E92',
                 model: 'Chevrolet Corsa 2020',
                 onVerNoMapa: (_) {
-                  setState(() => _selectedTabIndex = 0);
+                  setState(() => _selectedTabIndex = 1);
                 },
               ),
             ],
@@ -949,12 +960,13 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
           const SizedBox(width: 24),
 
-          // Abas da Plataforma (principais, historial, Dashboard, Relatórios, eventos)
-          _buildNavTabItem(0, 'principais', Icons.gps_fixed),
-          _buildNavTabItem(1, 'historial', Icons.route),
-          _buildNavTabItem(2, 'Dashboard', Icons.analytics_outlined),
-          _buildNavTabItem(3, 'Relatórios', Icons.description_outlined),
-          _buildNavTabItem(4, 'eventos', Icons.notifications_active_outlined),
+          // Abas da Plataforma (Visão geral, principais, historial, Dashboard, Relatórios, eventos)
+          _buildNavTabItem(0, 'Visão geral', Icons.dashboard_outlined),
+          _buildNavTabItem(1, 'principais', Icons.gps_fixed),
+          _buildNavTabItem(2, 'historial', Icons.route),
+          _buildNavTabItem(3, 'Dashboard', Icons.analytics_outlined),
+          _buildNavTabItem(4, 'Relatórios', Icons.description_outlined),
+          _buildNavTabItem(5, 'eventos', Icons.notifications_active_outlined),
 
           const Spacer(),
 
@@ -1154,6 +1166,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         unselectedFontSize: 10,
         type: BottomNavigationBarType.fixed,
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Início'),
           BottomNavigationBarItem(icon: Icon(Icons.gps_fixed), label: 'Ao Vivo'),
           BottomNavigationBarItem(icon: Icon(Icons.route), label: 'Histórico'),
           BottomNavigationBarItem(icon: Icon(Icons.analytics_outlined), label: 'Dashboard'),
@@ -1164,7 +1177,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     );
   }
 
-  // --- TAB 0: MAPA AO VIVO ---
+  // --- TAB 1: MAPA AO VIVO ---
   Widget _buildLiveMapTab(VeiculoInfo? v, double bottomPadding) {
     return Stack(
       children: [
