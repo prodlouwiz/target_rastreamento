@@ -10,6 +10,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/pilot_api_config.dart';
 import '../widgets/mercosul_plate.dart';
 import 'landing_page_screen.dart';
+import 'views/dashboard_view.dart';
+import 'views/eventos_view.dart';
+import 'views/historico_view.dart';
+import 'views/relatorios_view.dart';
 
 class SensorInfo {
   final String name;
@@ -270,6 +274,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   DateTime? _ultimaAtualizacaoSucesso;
 
   MapStyle _estiloMapa = MapStyle.dark;
+  int _selectedTabIndex = 0; // 0: Ao Vivo, 1: Histórico, 2: Dashboard, 3: Relatórios, 4: Eventos
 
   @override
   void initState() {
@@ -830,649 +835,873 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final v = _veiculoSelecionado;
-    final topPadding = MediaQuery.of(context).padding.top;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      body: Stack(
-        children: [
-          // 1. MAPA INTERATIVO (FlutterMap)
-          Positioned.fill(
-            child: FlutterMap(
-              mapController: _mapController,
-              options: const MapOptions(
-                initialCenter: LatLng(-22.504771, -41.920289),
-                initialZoom: 16.5,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 900;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFF0B1117),
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(isDesktop ? 56 : 52),
+            child: isDesktop ? _buildDesktopNavBar(v) : _buildMobileNavBar(v),
+          ),
+          body: IndexedStack(
+            index: _selectedTabIndex,
+            children: [
+              // Tab 0: Ao Vivo (Mapa em Tempo Real)
+              _buildLiveMapTab(v, bottomPadding),
+
+              // Tab 1: Histórico (Viagens, Rota, Timeline Player e Sensores)
+              HistoricoView(
+                plate: v?.placa ?? 'MQA6E92',
+                model: 'Chevrolet Corsa 2020',
+                deviceType: 'GT06',
               ),
+
+              // Tab 2: Dashboard (Infoblocos, Speed Pies e Gráficos Semanais)
+              DashboardView(
+                plate: v?.placa ?? 'MQA6E92',
+                model: 'Chevrolet Corsa 2020',
+                deviceType: 'GT06',
+                clientName: 'Vidal Rastreamento',
+              ),
+
+              // Tab 3: Relatórios (Filtros por Data, Gráficos de Velocidade e Exportação)
+              RelatoriosView(
+                plate: v?.placa ?? 'MQA6E92',
+                model: 'Chevrolet Corsa 2020',
+                clientName: 'Vidal Rastreamento',
+              ),
+
+              // Tab 4: Eventos (Log Cronológico de Ignição, Cercas e Telemetria)
+              EventosView(
+                plate: v?.placa ?? 'MQA6E92',
+                model: 'Chevrolet Corsa 2020',
+                onVerNoMapa: (_) {
+                  setState(() => _selectedTabIndex = 0);
+                },
+              ),
+            ],
+          ),
+          bottomNavigationBar: !isDesktop ? _buildMobileBottomNav() : null,
+        );
+      },
+    );
+  }
+
+  // --- NAVBAR SUPERIOR DESKTOP (ESTILO PILOT GPS + TARGET) ---
+  Widget _buildDesktopNavBar(VeiculoInfo? v) {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0B1117),
+        border: Border(bottom: BorderSide(color: Color(0xFF1E293B), width: 1.2)),
+      ),
+      child: Row(
+        children: [
+          // Marca Target Rastreamento
+          InkWell(
+            onTap: () => setState(() => _selectedTabIndex = 0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                TileLayer(
-                  urlTemplate: _tileUrl,
-                  userAgentPackageName: 'com.target.rastreamento',
-                  tileBuilder:
-                      _estiloMapa == MapStyle.dark ? darkModeTileBuilder : null,
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF1E2D).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFFF1E2D)),
+                  ),
+                  child: const Icon(Icons.radar, color: Color(0xFFFF1E2D), size: 18),
                 ),
-                MarkerLayer(markers: _gerarMarcadores()),
+                const SizedBox(width: 10),
+                const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TARGET',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.2,
+                      ),
+                    ),
+                    Text(
+                      'RASTREAMENTO',
+                      style: TextStyle(
+                        color: Color(0xFFFF1E2D),
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
 
-          // 2. HEADER FLUTUANTE SUPERIOR (Safe Area Aware)
-          Positioned(
-            top: topPadding + 8,
-            left: 12,
-            right: 12,
-            child: Container(
-              height: 54,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E).withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF333333)),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black54,
-                    blurRadius: 12,
-                    offset: Offset(0, 3),
-                  ),
-                ],
+          const SizedBox(width: 24),
+
+          // Abas da Plataforma (principais, historial, Dashboard, Relatórios, eventos)
+          _buildNavTabItem(0, 'principais', Icons.gps_fixed),
+          _buildNavTabItem(1, 'historial', Icons.route),
+          _buildNavTabItem(2, 'Dashboard', Icons.analytics_outlined),
+          _buildNavTabItem(3, 'Relatórios', Icons.description_outlined),
+          _buildNavTabItem(4, 'eventos', Icons.notifications_active_outlined),
+
+          const Spacer(),
+
+          // Indicadores de Frota Estilo Pilot GPS: 1 0 1 0 0
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildPilotBadge('1', const Color(0xFF35D49A)), // Online
+              const SizedBox(width: 4),
+              _buildPilotBadge('0', const Color(0xFF00E5FF)),
+              const SizedBox(width: 4),
+              _buildPilotBadge('1', const Color(0xFF38BDF8)),
+              const SizedBox(width: 4),
+              _buildPilotBadge('0', const Color(0xFFFFB300)),
+              const SizedBox(width: 4),
+              _buildPilotBadge('0', const Color(0xFFFF1E2D)),
+            ],
+          ),
+
+          const SizedBox(width: 14),
+
+          // Informações de Usuário e Veículo
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111A23),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFF1E293B)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.account_circle_outlined, color: Color(0xFF38BDF8), size: 16),
+                const SizedBox(width: 8),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Vidal Rastreamento',
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${v?.placa ?? 'MQA6E92'} · ${_ultimaAtualizacaoSucesso != null ? _formatarHora(_ultimaAtualizacaoSucesso!) : 'Online'}',
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Botões de Ação Topo
+          IconButton(
+            tooltip: 'Diagnóstico de Telemetria',
+            icon: const Icon(Icons.terminal, color: Color(0xFF94A3B8), size: 18),
+            onPressed: _abrirDiagnostico,
+          ),
+          IconButton(
+            tooltip: 'Atualizar Dados',
+            icon: _carregando
+                ? const SizedBox(
+                    width: 15,
+                    height: 15,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF1E2D)),
+                  )
+                : const Icon(Icons.refresh, color: Colors.white, size: 18),
+            onPressed: _carregando ? null : () => _buscarVeiculos(),
+          ),
+          IconButton(
+            tooltip: 'Sair da Conta',
+            icon: const Icon(Icons.logout, color: Color(0xFFFF1E2D), size: 18),
+            onPressed: _confirmarLogout,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavTabItem(int index, String label, IconData icon) {
+    final isSelected = _selectedTabIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _selectedTabIndex = index),
+      child: Container(
+        height: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isSelected ? const Color(0xFFFF1E2D) : Colors.transparent,
+              width: 2.5,
+            ),
+          ),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: isSelected ? const Color(0xFFFF1E2D) : const Color(0xFF94A3B8),
               ),
-              child: Row(
-                children: [
-                  // Logo Radar Vermelho Target
-                  const Icon(Icons.radar, color: Color(0xFFFF1E2D), size: 26),
-                  const SizedBox(width: 10),
-                  // Títulos
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'TARGET',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2.5,
-                          ),
-                        ),
-                        Row(
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPilotBadge(String text, Color color) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 0.8),
+      ),
+      child: Center(
+        child: Text(
+          text,
+          style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  // --- NAVBAR SUPERIOR MOBILE ---
+  Widget _buildMobileNavBar(VeiculoInfo? v) {
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0B1117),
+        border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.radar, color: Color(0xFFFF1E2D), size: 20),
+          const SizedBox(width: 8),
+          const Text(
+            'TARGET',
+            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              v?.placa ?? 'MQA6E92',
+              style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white, size: 18),
+            onPressed: _carregando ? null : () => _buscarVeiculos(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Color(0xFFFF1E2D), size: 18),
+            onPressed: _confirmarLogout,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- BARRA INFERIOR DE NAVEGAÇÃO MOBILE ---
+  Widget _buildMobileBottomNav() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0B1117),
+        border: Border(top: BorderSide(color: Color(0xFF1E293B), width: 1.2)),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: _selectedTabIndex,
+        onTap: (index) => setState(() => _selectedTabIndex = index),
+        backgroundColor: const Color(0xFF0B1117),
+        selectedItemColor: const Color(0xFFFF1E2D),
+        unselectedItemColor: const Color(0xFF94A3B8),
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.gps_fixed), label: 'Ao Vivo'),
+          BottomNavigationBarItem(icon: Icon(Icons.route), label: 'Histórico'),
+          BottomNavigationBarItem(icon: Icon(Icons.analytics_outlined), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.description_outlined), label: 'Relatórios'),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_active_outlined), label: 'Eventos'),
+        ],
+      ),
+    );
+  }
+
+  // --- TAB 0: MAPA AO VIVO ---
+  Widget _buildLiveMapTab(VeiculoInfo? v, double bottomPadding) {
+    return Stack(
+      children: [
+        // 1. MAPA INTERATIVO (FlutterMap)
+        Positioned.fill(
+          child: FlutterMap(
+            mapController: _mapController,
+            options: const MapOptions(
+              initialCenter: LatLng(-22.504771, -41.920289),
+              initialZoom: 16.5,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: _tileUrl,
+                userAgentPackageName: 'com.target.rastreamento',
+                tileBuilder: _estiloMapa == MapStyle.dark ? darkModeTileBuilder : null,
+              ),
+              MarkerLayer(markers: _gerarMarcadores()),
+            ],
+          ),
+        ),
+
+        // 2. BARRA DE CARREGAMENTO SUPERIOR
+        if (_carregando)
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: LinearProgressIndicator(
+              minHeight: 2.5,
+              color: Color(0xFFFF1E2D),
+              backgroundColor: Colors.transparent,
+            ),
+          ),
+
+        // 3. BOTÕES FLUTUANTES LATERAIS (Estilo de Mapa, Rota e Centralizar)
+        Positioned(
+          right: 14,
+          bottom: _painelExpandido ? 510 : (160 + bottomPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildBotaoFlutuante(
+                icon: _estiloMapa == MapStyle.dark
+                    ? Icons.dark_mode
+                    : (_estiloMapa == MapStyle.satellite ? Icons.satellite_alt : Icons.map_outlined),
+                tooltip: 'Estilo do Mapa',
+                onTap: _alternarEstiloMapa,
+              ),
+              const SizedBox(height: 10),
+              if (v != null && v.temLocalizacaoValida) ...[
+                _buildBotaoFlutuante(
+                  icon: Icons.directions_outlined,
+                  tooltip: 'Abrir Rota',
+                  iconColor: const Color(0xFF35D49A),
+                  onTap: () => _mostrarMenuRotas(v),
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (v != null && v.temLocalizacaoValida)
+                _buildBotaoFlutuante(
+                  icon: Icons.my_location,
+                  tooltip: 'Centralizar no Veículo',
+                  iconColor: const Color(0xFFFF1E2D),
+                  onTap: () => _centralizarNoVeiculo(v),
+                ),
+            ],
+          ),
+        ),
+
+        // 4. PAINEL INFERIOR DESLIZÁVEL DE TELEMETRIA
+        if (v != null)
+          _buildBottomTelemetryPanel(v, bottomPadding),
+      ],
+    );
+  }
+
+  // --- PAINEL INFERIOR DE TELEMETRIA DO VEÍCULO ---
+  Widget _buildBottomTelemetryPanel(VeiculoInfo v, double bottomPadding) {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      left: 12,
+      right: 12,
+      bottom: bottomPadding > 0 ? bottomPadding : 12,
+      height: _painelExpandido ? 490 : 138,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFF333333), width: 1.2),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black87,
+              blurRadius: 20,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Column(
+            children: [
+              // Puxador Superior Discreto
+              GestureDetector(
+                onTap: () => setState(() => _painelExpandido = !_painelExpandido),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF424242),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // CABEÇALHO DO VEÍCULO (Placa Mercosul + Status)
+              InkWell(
+                onTap: () => setState(() => _painelExpandido = !_painelExpandido),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
+                  child: Row(
+                    children: [
+                      // Placa Mercosul
+                      MercosulPlate(
+                        plate: v.placa,
+                        width: 108,
+                        height: 36,
+                        fontSize: 14,
+                      ),
+                      const SizedBox(width: 12),
+
+                      // Informações de Ignição e Tempo de Estacionamento
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF35D49A),
-                                shape: BoxShape.circle,
-                              ),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFFFF1E2D),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  v.ignicao ? 'IGNIÇÃO LIGADA' : 'IGNIÇÃO DESLIGADA',
+                                  style: TextStyle(
+                                    color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF9E9E9E),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _ultimaAtualizacaoSucesso != null
-                                  ? 'Online • ${_formatarHora(_ultimaAtualizacaoSucesso!)}'
-                                  : 'Sincronizando...',
-                              style: const TextStyle(
-                                color: Color(0xFF9E9E9E),
-                                fontSize: 10,
-                                letterSpacing: 0.5,
+                            const SizedBox(height: 3),
+                            // Badge de Status (Parking / Moving)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: v.ignicao
+                                    ? const Color(0xFF35D49A).withValues(alpha: 0.15)
+                                    : const Color(0xFF1976D2).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(
+                                  color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF1E88E5),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                v.statusFormatado,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF64B5F6),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-
-                  // Ações do Top Bar
-                  IconButton(
-                    tooltip: 'Diagnóstico',
-                    icon: const Icon(Icons.terminal, color: Color(0xFF9E9E9E), size: 20),
-                    onPressed: _abrirDiagnostico,
-                  ),
-                  IconButton(
-                    tooltip: 'Atualizar',
-                    icon: _carregando
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Color(0xFFFF1E2D),
-                            ),
-                          )
-                        : const Icon(Icons.refresh, color: Colors.white, size: 20),
-                    onPressed: _carregando ? null : () => _buscarVeiculos(),
-                  ),
-                  IconButton(
-                    tooltip: 'Sair da conta',
-                    icon: const Icon(Icons.logout, color: Color(0xFF9E9E9E), size: 20),
-                    onPressed: _confirmarLogout,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // 3. BARRA DE CARREGAMENTO SUPERIOR
-          if (_carregando)
-            Positioned(
-              top: topPadding + 66,
-              left: 20,
-              right: 20,
-              child: const ClipRRect(
-                borderRadius: BorderRadius.all(Radius.circular(2)),
-                child: LinearProgressIndicator(
-                  minHeight: 2,
-                  color: Color(0xFFFF1E2D),
-                  backgroundColor: Colors.transparent,
-                ),
-              ),
-            ),
-
-          // 4. BOTÕES FLUTUANTES LATERAIS (Estilo de Mapa, Rota e Centralizar)
-          Positioned(
-            right: 14,
-            bottom: _painelExpandido ? 510 : (160 + bottomPadding),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Alternar Estilo do Mapa (Dark / Ruas / Satélite)
-                _buildBotaoFlutuante(
-                  icon: _estiloMapa == MapStyle.dark
-                      ? Icons.dark_mode
-                      : (_estiloMapa == MapStyle.satellite ? Icons.satellite_alt : Icons.map_outlined),
-                  tooltip: 'Estilo do Mapa',
-                  onTap: _alternarEstiloMapa,
-                ),
-                const SizedBox(height: 10),
-
-                // Traçar Rota no Waze / Google Maps
-                if (v != null && v.temLocalizacaoValida) ...[
-                  _buildBotaoFlutuante(
-                    icon: Icons.directions_outlined,
-                    tooltip: 'Abrir Rota',
-                    iconColor: const Color(0xFF35D49A),
-                    onTap: () => _mostrarMenuRotas(v),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-
-                // Centralizar no Carro
-                if (v != null && v.temLocalizacaoValida)
-                  _buildBotaoFlutuante(
-                    icon: Icons.my_location,
-                    tooltip: 'Centralizar no Veículo',
-                    iconColor: const Color(0xFFFF1E2D),
-                    onTap: () => _centralizarNoVeiculo(v),
-                  ),
-              ],
-            ),
-          ),
-
-          // 5. PAINEL INFERIOR DESLIZÁVEL (INTEGRADO & RESPONSIVO)
-          if (v != null)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 280),
-              curve: Curves.easeOutCubic,
-              left: 12,
-              right: 12,
-              bottom: bottomPadding > 0 ? bottomPadding : 12,
-              height: _painelExpandido ? 490 : 138,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFF333333), width: 1.2),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black87,
-                      blurRadius: 20,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: Column(
-                    children: [
-                      // Puxador Superior Discreto
-                      GestureDetector(
-                        onTap: () => setState(() => _painelExpandido = !_painelExpandido),
-                        behavior: HitTestBehavior.opaque,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.only(top: 8, bottom: 4),
-                          child: Center(
-                            child: Container(
-                              width: 36,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF424242),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                        ),
                       ),
 
-                      // CABEÇALHO DO VEÍCULO (Placa Mercosul + Status)
-                      InkWell(
-                        onTap: () => setState(() => _painelExpandido = !_painelExpandido),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
-                          child: Row(
-                            children: [
-                              // Placa Mercosul com visual idêntico ao oficial
-                              MercosulPlate(
-                                plate: v.placa,
-                                width: 108,
-                                height: 36,
-                                fontSize: 14,
-                              ),
-                              const SizedBox(width: 12),
-
-                              // Informações de Ignição e Tempo de Estacionamento
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 7,
-                                          height: 7,
-                                          decoration: BoxDecoration(
-                                            color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFFFF1E2D),
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          v.ignicao ? 'IGNIÇÃO LIGADA' : 'IGNIÇÃO DESLIGADA',
-                                          style: TextStyle(
-                                            color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF9E9E9E),
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 0.8,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 3),
-                                    // Badge de Status (Parking / Moving)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                                      decoration: BoxDecoration(
-                                        color: v.ignicao
-                                            ? const Color(0xFF35D49A).withValues(alpha: 0.15)
-                                            : const Color(0xFF1976D2).withValues(alpha: 0.25),
-                                        borderRadius: BorderRadius.circular(5),
-                                        border: Border.all(
-                                          color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF1E88E5),
-                                          width: 0.8,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        v.statusFormatado,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF64B5F6),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Ícone de Expansão (Chevron)
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF2C2C2C),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Icon(
-                                  _painelExpandido ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-                                  color: const Color(0xFF9E9E9E),
-                                  size: 20,
-                                ),
-                              ),
-                            ],
-                          ),
+                      // Ícone de Expansão (Chevron)
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2C2C2C),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Icon(
+                          _painelExpandido ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                          color: const Color(0xFF9E9E9E),
+                          size: 20,
                         ),
                       ),
-
-                      // VISUALIZAÇÃO COMPACTA (Resumo Rápido)
-                      if (!_painelExpandido)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildMetricaItem(
-                                Icons.speed,
-                                '${v.velocidade} km/h',
-                                'Velocidade',
-                                v.velocidade > 0 ? const Color(0xFF35D49A) : Colors.white,
-                              ),
-                              _buildMetricaItem(
-                                Icons.satellite_alt_outlined,
-                                '${v.satelites}',
-                                'Satélites',
-                                const Color(0xFFFFB300),
-                              ),
-                              _buildMetricaItem(
-                                Icons.route_outlined,
-                                '${v.odometro.toStringAsFixed(2)} km',
-                                'Odômetro',
-                                Colors.white,
-                              ),
-                              _buildMetricaItem(
-                                Icons.battery_charging_full,
-                                _obterValorSensor(v, 'Batt', '6 %'),
-                                'Bateria',
-                                const Color(0xFFFF1E2D),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      // VISUALIZAÇÃO EXPANDIDA COMPLETA
-                      if (_painelExpandido)
-                        Expanded(
-                          child: SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Divider(color: Color(0xFF2C2C2C), height: 1),
-                                const SizedBox(height: 8),
-
-                                // Ações Rápidas de Navegação (Waze, Google Maps)
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildBotaoAcaoRapida(
-                                        icon: Icons.navigation_outlined,
-                                        label: 'Waze',
-                                        cor: const Color(0xFF33CCFF),
-                                        onTap: () => _abrirNavegacao(v, 'waze'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _buildBotaoAcaoRapida(
-                                        icon: Icons.map_outlined,
-                                        label: 'Google Maps',
-                                        cor: const Color(0xFF4285F4),
-                                        onTap: () => _abrirNavegacao(v, 'google'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _buildBotaoAcaoRapida(
-                                        icon: Icons.copy_outlined,
-                                        label: 'Coordenadas',
-                                        cor: const Color(0xFF9E9E9E),
-                                        onTap: () {
-                                          Clipboard.setData(ClipboardData(text: '${v.lat}, ${v.lon}'));
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('Coordenadas copiadas para a área de transferência!'),
-                                              backgroundColor: Color(0xFF1E1E1E),
-                                              duration: Duration(seconds: 1),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // Endereço / Localização
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF171717),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFF2C2C2C)),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Icon(Icons.location_on_outlined, color: Color(0xFFFF1E2D), size: 18),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              'Localização Atual',
-                                              style: TextStyle(
-                                                color: Color(0xFF9E9E9E),
-                                                fontSize: 10,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            const Text(
-                                              'Avenida Brasília, 28895-678, Rio das Ostras - RJ',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              '${v.lat.toStringAsFixed(6)}, ${v.lon.toStringAsFixed(6)}',
-                                              style: const TextStyle(
-                                                color: Color(0xFF9E9E9E),
-                                                fontSize: 11,
-                                                fontFamily: 'monospace',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // Grade de Métricas do Painel
-                                const Text(
-                                  'TELEMETRIA EM TEMPO REAL',
-                                  style: TextStyle(
-                                    color: Color(0xFF9E9E9E),
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildCardMetrica(
-                                        'Velocidade',
-                                        '${v.velocidade} km/h',
-                                        Icons.speed,
-                                        v.velocidade > 0 ? const Color(0xFF35D49A) : Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _buildCardMetrica(
-                                        'Satélites',
-                                        '${v.satelites} fixos',
-                                        Icons.satellite_alt_outlined,
-                                        const Color(0xFFFFB300),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildCardMetrica(
-                                        'Odômetro',
-                                        '${v.odometro.toStringAsFixed(2)} km',
-                                        Icons.route_outlined,
-                                        Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _buildCardMetrica(
-                                        'Bateria Interna',
-                                        _obterValorSensor(v, 'Batt', '6 %'),
-                                        Icons.battery_alert,
-                                        const Color(0xFFFF1E2D),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // Sensores do Rastreador
-                                const Text(
-                                  'SENSORES & DIAGNÓSTICO',
-                                  style: TextStyle(
-                                    color: Color(0xFF9E9E9E),
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF171717),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFF2C2C2C)),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      _buildLinhaSensor(
-                                        'Ignição',
-                                        v.ignicao ? 'Ligada' : 'Desligada',
-                                        v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF9E9E9E),
-                                        '17/10 19:32',
-                                      ),
-                                      const Divider(color: Color(0xFF222222), height: 1),
-                                      _buildLinhaSensor(
-                                        'Alimentação Principal',
-                                        _obterValorSensor(v, 'Power', 'Connected'),
-                                        const Color(0xFF35D49A),
-                                        '15/10 11:20',
-                                      ),
-                                      const Divider(color: Color(0xFF222222), height: 1),
-                                      _buildLinhaSensor(
-                                        'Sinal GSM Celular',
-                                        _obterValorSensor(v, 'GSM', '4 %'),
-                                        Colors.white,
-                                        '21:38',
-                                      ),
-                                      const Divider(color: Color(0xFF222222), height: 1),
-                                      _buildLinhaSensor(
-                                        'Receptor GPS',
-                                        _obterValorSensor(v, 'GPS', 'On'),
-                                        const Color(0xFF35D49A),
-                                        '22:20',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                const SizedBox(height: 14),
-
-                                // Ações de Segurança / Bloqueio
-                                const Text(
-                                  'COMANDOS REMOTOS DE SEGURANÇA',
-                                  style: TextStyle(
-                                    color: Color(0xFF9E9E9E),
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: const Color(0xFFFF1E2D),
-                                          side: const BorderSide(color: Color(0xFFFF1E2D), width: 1.5),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(vertical: 11),
-                                        ),
-                                        icon: const Icon(Icons.lock, size: 16),
-                                        label: const Text(
-                                          'BLOQUEAR',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1,
-                                          ),
-                                        ),
-                                        onPressed: () => _enviarComandoBloqueio(v, true),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF00C853),
-                                          foregroundColor: Colors.white,
-                                          elevation: 0,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(vertical: 11),
-                                        ),
-                                        icon: const Icon(Icons.lock_open, size: 16),
-                                        label: const Text(
-                                          'DESBLOQUEAR',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1,
-                                          ),
-                                        ),
-                                        onPressed: () => _enviarComandoBloqueio(v, false),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                              ],
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
               ),
-            ),
-        ],
+
+              // VISUALIZAÇÃO COMPACTA (Resumo Rápido)
+              if (!_painelExpandido)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildMetricaItem(
+                        Icons.speed,
+                        '${v.velocidade} km/h',
+                        'Velocidade',
+                        v.velocidade > 0 ? const Color(0xFF35D49A) : Colors.white,
+                      ),
+                      _buildMetricaItem(
+                        Icons.satellite_alt_outlined,
+                        '${v.satelites}',
+                        'Satélites',
+                        const Color(0xFFFFB300),
+                      ),
+                      _buildMetricaItem(
+                        Icons.route_outlined,
+                        '${v.odometro.toStringAsFixed(2)} km',
+                        'Odômetro',
+                        Colors.white,
+                      ),
+                      _buildMetricaItem(
+                        Icons.battery_charging_full,
+                        _obterValorSensor(v, 'Batt', '6 %'),
+                        'Bateria',
+                        const Color(0xFFFF1E2D),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // VISUALIZAÇÃO EXPANDIDA COMPLETA
+              if (_painelExpandido)
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Divider(color: Color(0xFF2C2C2C), height: 1),
+                        const SizedBox(height: 8),
+
+                        // Ações Rápidas de Navegação (Waze, Google Maps)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildBotaoAcaoRapida(
+                                icon: Icons.navigation_outlined,
+                                label: 'Waze',
+                                cor: const Color(0xFF33CCFF),
+                                onTap: () => _abrirNavegacao(v, 'waze'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildBotaoAcaoRapida(
+                                icon: Icons.map_outlined,
+                                label: 'Google Maps',
+                                cor: const Color(0xFF4285F4),
+                                onTap: () => _abrirNavegacao(v, 'google'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildBotaoAcaoRapida(
+                                icon: Icons.copy_outlined,
+                                label: 'Coordenadas',
+                                cor: const Color(0xFF9E9E9E),
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: '${v.lat}, ${v.lon}'));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Coordenadas copiadas para a área de transferência!'),
+                                      backgroundColor: Color(0xFF1E1E1E),
+                                      duration: Duration(seconds: 1),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Endereço / Localização
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF171717),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF2C2C2C)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.location_on_outlined, color: Color(0xFFFF1E2D), size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Localização Atual',
+                                      style: TextStyle(
+                                        color: Color(0xFF9E9E9E),
+                                        fontSize: 10,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text(
+                                      'Avenida Brasília, 28895-678, Rio das Ostras - RJ',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      '${v.lat.toStringAsFixed(6)}, ${v.lon.toStringAsFixed(6)}',
+                                      style: const TextStyle(
+                                        color: Color(0xFF9E9E9E),
+                                        fontSize: 11,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Grade de Métricas do Painel
+                        const Text(
+                          'TELEMETRIA EM TEMPO REAL',
+                          style: TextStyle(
+                            color: Color(0xFF9E9E9E),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCardMetrica(
+                                'Velocidade',
+                                '${v.velocidade} km/h',
+                                Icons.speed,
+                                v.velocidade > 0 ? const Color(0xFF35D49A) : Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildCardMetrica(
+                                'Satélites',
+                                '${v.satelites} fixos',
+                                Icons.satellite_alt_outlined,
+                                const Color(0xFFFFB300),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCardMetrica(
+                                'Odômetro',
+                                '${v.odometro.toStringAsFixed(2)} km',
+                                Icons.route_outlined,
+                                Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildCardMetrica(
+                                'Bateria Interna',
+                                _obterValorSensor(v, 'Batt', '6 %'),
+                                Icons.battery_alert,
+                                const Color(0xFFFF1E2D),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Sensores do Rastreador
+                        const Text(
+                          'SENSORES & DIAGNÓSTICO',
+                          style: TextStyle(
+                            color: Color(0xFF9E9E9E),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF171717),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF2C2C2C)),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildLinhaSensor(
+                                'Ignição',
+                                v.ignicao ? 'Ligada' : 'Desligada',
+                                v.ignicao ? const Color(0xFF35D49A) : const Color(0xFF9E9E9E),
+                                '17/10 19:32',
+                              ),
+                              const Divider(color: Color(0xFF222222), height: 1),
+                              _buildLinhaSensor(
+                                'Alimentação Principal',
+                                _obterValorSensor(v, 'Power', 'Connected'),
+                                const Color(0xFF35D49A),
+                                '15/10 11:20',
+                              ),
+                              const Divider(color: Color(0xFF222222), height: 1),
+                              _buildLinhaSensor(
+                                'Sinal GSM Celular',
+                                _obterValorSensor(v, 'GSM', '4 %'),
+                                Colors.white,
+                                '21:38',
+                              ),
+                              const Divider(color: Color(0xFF222222), height: 1),
+                              _buildLinhaSensor(
+                                'Receptor GPS',
+                                _obterValorSensor(v, 'GPS', 'On'),
+                                const Color(0xFF35D49A),
+                                '22:20',
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // Ações de Segurança / Bloqueio
+                        const Text(
+                          'COMANDOS REMOTOS DE SEGURANÇA',
+                          style: TextStyle(
+                            color: Color(0xFF9E9E9E),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFFF1E2D),
+                                  side: const BorderSide(color: Color(0xFFFF1E2D), width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                ),
+                                icon: const Icon(Icons.lock, size: 16),
+                                label: const Text(
+                                  'BLOQUEAR',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                                onPressed: () => _enviarComandoBloqueio(v, true),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF00C853),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                ),
+                                icon: const Icon(Icons.lock_open, size: 16),
+                                label: const Text(
+                                  'DESBLOQUEAR',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                                onPressed: () => _enviarComandoBloqueio(v, false),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
