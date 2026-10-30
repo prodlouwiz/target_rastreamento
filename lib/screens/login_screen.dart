@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -50,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final url = PilotApiConfig.getUri('/api/v3/auth/token');
 
-      final response = await http.post(
+      var response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
@@ -65,6 +66,29 @@ class _LoginScreenState extends State<LoginScreen> {
         const Duration(seconds: 12),
         onTimeout: () => http.Response('{"code": 408, "msg": "Tempo limite esgotado. Verifique sua conexão."}', 408),
       );
+
+      // Fallback: se a rota relativa retornar 404 (ex: Nginx ainda não recarregado), tenta o endpoint direto
+      if (response.statusCode == 404 && kIsWeb) {
+        final directUrl = PilotApiConfig.getDirectUri('/api/v3/auth/token');
+        try {
+          final fallbackResponse = await http.post(
+            directUrl,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'username': usuario,
+              'password': senha,
+              'long_lived': true,
+            }),
+          ).timeout(const Duration(seconds: 10));
+
+          if (fallbackResponse.statusCode != 404) {
+            response = fallbackResponse;
+          }
+        } catch (_) {}
+      }
 
       if (response.statusCode == 200) {
         final dados = jsonDecode(response.body);
@@ -87,14 +111,14 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         _mostrarMensagem('Usuário ou senha incorretos. Verifique suas credenciais.', isErro: true);
       } else if (response.statusCode == 404) {
-        _mostrarMensagem('Rota /api não configurada no Nginx do servidor (404).', isErro: true);
+        _mostrarMensagem('Rota /api não configurada no servidor (404).', isErro: true);
       } else if (response.statusCode == 408) {
         _mostrarMensagem('Tempo de conexão esgotado. Tente novamente em instantes.', isErro: true);
       } else {
         _mostrarMensagem('Erro ao conectar (${response.statusCode}). Tente novamente.', isErro: true);
       }
     } catch (e) {
-      _mostrarMensagem("Sem conexão com a central ($e). Verifique sua rede e tente novamente.", isErro: true);
+      _mostrarMensagem("Sem conexão com a central. Verifique sua rede e tente novamente.", isErro: true);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

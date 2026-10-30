@@ -238,8 +238,10 @@ class _LandingPageScreenState extends State<LandingPageScreen>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth >= 980;
-    final isTablet = screenWidth >= 650 && screenWidth < 980;
+    final isUltraWide = screenWidth >= 1320;
+    final isDesktop = screenWidth >= 1050;
+    final isTablet = screenWidth >= 700 && screenWidth < 1050;
+    final isMobile = screenWidth < 700;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B1117), // Preto Profundo Tecnológico
@@ -268,19 +270,22 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                 pinned: true,
                 elevation: 0,
                 toolbarHeight: 74,
-                titleSpacing: isDesktop ? 40 : 16,
+                titleSpacing: isDesktop ? 32 : 16,
                 title: Row(
                   children: [
                     InkWell(
                       onTap: () => _scrollController.animateTo(0,
                           duration: const Duration(milliseconds: 500),
                           curve: Curves.easeInOut),
-                      child: const TargetLogoHorizontal(iconSize: 32),
+                      child: TargetLogoHorizontal(
+                        iconSize: isMobile ? 26 : 30,
+                        compact: isMobile || isTablet,
+                      ),
                     ),
                     const Spacer(),
 
-                    // Links Centrais
-                    if (isDesktop) ...[
+                    // Links Centrais (Exibidos em telas UltraWide para nunca estourar)
+                    if (isUltraWide) ...[
                       _buildNavLink(
                           'Início',
                           () => _scrollController.animateTo(0,
@@ -302,7 +307,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                                     builder: (_) => const OrcamentoScreen()),
                               )),
                       _buildNavLink('FAQ', () => _rolarParaSecao(_faqKey)),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                     ],
 
                     // Botão Emergência 24h
@@ -322,7 +327,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           children: [
                             const Icon(Icons.warning_amber_rounded,
                                 color: Color(0xFFFF1E2D), size: 14),
-                            if (isDesktop) ...[
+                            if (isUltraWide) ...[
                               const SizedBox(width: 4),
                               const Text(
                                 'Emergência 24h',
@@ -354,16 +359,16 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           side: const BorderSide(
                               color: Color(0xFF00E5FF), width: 1.0),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
+                              horizontal: 12, vertical: 10),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                         ),
                         icon: const Icon(Icons.desktop_windows,
-                            size: 15, color: Color(0xFF00E5FF)),
+                            size: 14, color: Color(0xFF00E5FF)),
                         label: const Text(
                           'Plataforma Web',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF00E5FF),
                           ),
@@ -375,7 +380,7 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         ),
                       ),
 
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
 
                     // Botão Área do Cliente (Estilo Contornado Sóbrio)
                     OutlinedButton.icon(
@@ -384,24 +389,24 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                         side: const BorderSide(color: TargetColors.line, width: 1.2),
                         backgroundColor: TargetColors.panel,
                         padding: EdgeInsets.symmetric(
-                            horizontal: isDesktop ? 16 : 10, vertical: 12),
+                            horizontal: isDesktop ? 14 : 10, vertical: 10),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
                       icon: const Icon(Icons.person_outline,
-                          size: 16, color: TargetColors.textWhite),
+                          size: 15, color: TargetColors.textWhite),
                       label: Text(
                         isDesktop ? 'Área do Cliente' : 'Login',
                         style: const TextStyle(
-                            fontSize: 12.5, fontWeight: FontWeight.bold),
+                            fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       onPressed: _irParaLogin,
                     ),
 
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
 
                     // Botão WhatsApp Oficial (Vermelho Target de Ação)
-                    if (!isTablet && !isDesktop)
+                    if (isMobile || isTablet)
                       IconButton(
                         icon: const Icon(Icons.chat, color: TargetColors.red),
                         tooltip: 'WhatsApp',
@@ -414,15 +419,15 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                           foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
+                              horizontal: 14, vertical: 10),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                         ),
-                        icon: const Icon(Icons.chat, size: 16),
+                        icon: const Icon(Icons.chat, size: 15),
                         label: const Text(
                           'Falar no WhatsApp',
                           style: TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.bold),
+                              fontSize: 12.5, fontWeight: FontWeight.bold),
                         ),
                         onPressed: () => _abrirWhatsApp(
                             'Olá! Quero falar com um consultor da Target Rastreamento.'),
@@ -528,11 +533,11 @@ class _LandingPageScreenState extends State<LandingPageScreen>
         color: TargetColors.darkBg, // #0B1117 (Preto Grafite)
         image: DecorationImage(
           image: const NetworkImage(
-            'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=1600&q=80',
+            'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1920&q=80',
           ),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            TargetColors.darkBg.withValues(alpha: 0.90),
+            TargetColors.darkBg.withValues(alpha: 0.88),
             BlendMode.darken,
           ),
         ),
@@ -1047,32 +1052,39 @@ class _LandingPageScreenState extends State<LandingPageScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Toyota Corolla XEi',
-                              style: TextStyle(
-                                color: TargetColors.textWhite,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Toyota Corolla XEi',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: TargetColors.textWhite,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Av. Brasília, Costazul · Rio das Ostras',
-                              style: TextStyle(
-                                color: TargetColors.textMuted,
-                                fontSize: 9.5,
+                              SizedBox(height: 2),
+                              Text(
+                                'Av. Brasília, Costazul · Rio das Ostras',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: TargetColors.textMuted,
+                                  fontSize: 9.5,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         const MercosulPlate(
                           plate: 'BRA2E19',
-                          height: 20,
+                          height: 19,
                         ),
                       ],
                     ),
