@@ -1,8 +1,9 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/pilot_api_config.dart';
 import '../widgets/target_logo.dart';
 import 'emergencia_screen.dart';
 import 'landing_page_screen.dart';
@@ -47,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final url = Uri.parse('https://global.pilot-gps.com/api/v3/auth/token');
+      final url = PilotApiConfig.getUri('/api/v3/auth/token');
 
       final response = await http.post(
         url,
@@ -61,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'long_lived': true,
         }),
       ).timeout(
-        const Duration(seconds: 10),
+        const Duration(seconds: 12),
         onTimeout: () => http.Response('{"code": 408, "msg": "Tempo limite esgotado. Verifique sua conexão."}', 408),
       );
 
@@ -85,13 +86,15 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         _mostrarMensagem('Usuário ou senha incorretos. Verifique suas credenciais.', isErro: true);
+      } else if (response.statusCode == 404) {
+        _mostrarMensagem('Rota /api não configurada no Nginx do servidor (404).', isErro: true);
       } else if (response.statusCode == 408) {
         _mostrarMensagem('Tempo de conexão esgotado. Tente novamente em instantes.', isErro: true);
       } else {
         _mostrarMensagem('Erro ao conectar (${response.statusCode}). Tente novamente.', isErro: true);
       }
     } catch (e) {
-      _mostrarMensagem("Sem conexão com a central. Verifique sua rede e tente novamente.", isErro: true);
+      _mostrarMensagem("Sem conexão com a central ($e). Verifique sua rede e tente novamente.", isErro: true);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

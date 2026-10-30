@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/pilot_api_config.dart';
 import '../widgets/mercosul_plate.dart';
 import 'landing_page_screen.dart';
 
@@ -352,7 +353,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       String imeiEncontrado = '';
 
       // 1. Consulta /api/v3/vehicles para listar os carros da conta e pegar o IMEI
-      final urlVehicles = Uri.parse('https://global.pilot-gps.com/api/v3/vehicles');
+      final urlVehicles = PilotApiConfig.getUri('/api/v3/vehicles');
       final respVehicles = await _getRapido(urlVehicles, headers);
       buffer.writeln('GET /api/v3/vehicles (${respVehicles.statusCode})');
 
@@ -374,7 +375,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
       // 2. Se a lista de veículos não trouxe o IMEI, busca pela placa do carro (MQA6E92)
       if (imeiEncontrado.isEmpty) {
-        final urlPlate = Uri.parse('https://global.pilot-gps.com/api/v3/vehicles/by-plate?vehnum=MQA6E92');
+        final urlPlate = PilotApiConfig.getUri('/api/v3/vehicles/by-plate', {'vehnum': 'MQA6E92'});
         final respPlate = await _getRapido(urlPlate, headers);
         buffer.writeln('GET /api/v3/vehicles/by-plate (${respPlate.statusCode})');
 
@@ -390,7 +391,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
       // 3. Com o IMEI encontrado, consulta o status e telemetria em tempo real
       if (imeiEncontrado.isNotEmpty) {
-        final urlStatus = Uri.parse('https://global.pilot-gps.com/api/v3/vehicles/status?imei=$imeiEncontrado');
+        final urlStatus = PilotApiConfig.getUri('/api/v3/vehicles/status', {'imei': imeiEncontrado});
         final respStatus = await _getRapido(urlStatus, headers);
         buffer.writeln('GET /api/v3/vehicles/status (${respStatus.statusCode})');
 
@@ -636,7 +637,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         queryParams['agent_id'] = veiculo.agentId.toString();
       }
 
-      final uri = Uri.https('global.pilot-gps.com', '/api/v3/vehicles/$endpoint', queryParams);
+      final uri = PilotApiConfig.getUri('/api/v3/vehicles/$endpoint', queryParams);
 
       final headers = {
         'Authorization': widget.token.startsWith('Bearer ') ? widget.token : 'Bearer ${widget.token}',

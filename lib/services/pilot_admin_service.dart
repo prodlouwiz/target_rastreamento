@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'pilot_api_config.dart';
+
 /// Dados necessários para o cadastro de um novo cliente e veículo.
 class ClientRegistrationData {
   final String name;
@@ -96,7 +98,7 @@ class PilotAdminService {
       'org_type': orgType.toString(), // 1 = PJ, 2 = PF
     };
 
-    final uri = Uri.https(serverAddress, '/ax/api.php', queryParams);
+    final uri = PilotApiConfig.getUri('/ax/api.php', queryParams);
 
     try {
       final response = await http.post(
@@ -144,7 +146,7 @@ class PilotAdminService {
       'account_id': accountId,
     };
 
-    final uri = Uri.https(serverAddress, '/backend/api.php', queryParams);
+    final uri = PilotApiConfig.getUri('/backend/api.php', queryParams);
 
     try {
       final response = await http.get(
@@ -191,7 +193,7 @@ class PilotAdminService {
       if (vehicleModel != null && vehicleModel.isNotEmpty) 'model': vehicleModel,
     };
 
-    final uri = Uri.https(serverAddress, '/backend/api.php', queryParams);
+    final uri = PilotApiConfig.getUri('/backend/api.php', queryParams);
 
     try {
       final response = await http.post(
