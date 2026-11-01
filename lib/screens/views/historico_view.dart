@@ -155,13 +155,17 @@ class _HistoricoViewState extends State<HistoricoView> {
   }
 
   void _centralizarMapaNaViagemAtual() {
-    if (_trips.isEmpty || _selectedTripIndex >= _trips.length) return;
+    if (!mounted || _trips.isEmpty || _selectedTripIndex >= _trips.length) return;
     final trip = _trips[_selectedTripIndex];
     if (trip.route.isNotEmpty) {
-      // Ponto médio da rota da viagem
-      final centerLat = trip.route.map((p) => p.latitude).reduce((a, b) => a + b) / trip.route.length;
-      final centerLon = trip.route.map((p) => p.longitude).reduce((a, b) => a + b) / trip.route.length;
-      _mapController.move(LatLng(centerLat, centerLon), 14.6);
+      try {
+        // Ponto médio da rota da viagem
+        final centerLat = trip.route.map((p) => p.latitude).reduce((a, b) => a + b) / trip.route.length;
+        final centerLon = trip.route.map((p) => p.longitude).reduce((a, b) => a + b) / trip.route.length;
+        _mapController.move(LatLng(centerLat, centerLon), 14.6);
+      } catch (_) {
+        // Ignora se o controller do mapa ainda não completou o layout
+      }
     }
   }
 
@@ -293,6 +297,37 @@ class _HistoricoViewState extends State<HistoricoView> {
     return '${trip.start}:00 ${trip.date}';
   }
 
+  // Gera setas direcionais ao longo da rota (fiel ao traçado do Pilot GPS)
+  List<Marker> _gerarSetasDirecao(List<LatLng> route) {
+    if (route.length < 5) return [];
+    final List<Marker> list = [];
+    final step = (route.length / 8).ceil().clamp(4, 15);
+    for (int i = step; i < route.length - 1; i += step) {
+      final p1 = route[i - 1];
+      final p2 = route[i];
+      final dLon = p2.longitude - p1.longitude;
+      final dLat = p2.latitude - p1.latitude;
+      final angleRad = math.atan2(dLon, dLat);
+
+      list.add(
+        Marker(
+          point: p2,
+          width: 18,
+          height: 18,
+          child: Transform.rotate(
+            angle: angleRad,
+            child: const Icon(
+              Icons.navigation,
+              color: Color(0xFF00E676),
+              size: 14,
+            ),
+          ),
+        ),
+      );
+    }
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentPos = _getCurrentInterpolatedPosition();
@@ -352,9 +387,8 @@ class _HistoricoViewState extends State<HistoricoView> {
                         ),
                         children: [
                           TileLayer(
-                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            urlTemplate: 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.target.rastreamento',
-                            tileBuilder: _targetDarkModeTileBuilder,
                           ),
                           // Rota percorrida completa (Trajeto Verde com Glow suave)
                           if (currentTrip != null && currentTrip.route.isNotEmpty) ...[
@@ -373,6 +407,10 @@ class _HistoricoViewState extends State<HistoricoView> {
                                   color: const Color(0xFF00E676),
                                 ),
                               ],
+                            ),
+                            // Setas de direção ao longo da rota (estilo Pilot GPS)
+                            MarkerLayer(
+                              markers: _gerarSetasDirecao(currentTrip.route),
                             ),
                             // Marcadores de Ponto A (Partida) e Ponto B (Destino)
                             MarkerLayer(
@@ -552,9 +590,8 @@ class _HistoricoViewState extends State<HistoricoView> {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate: 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.target.rastreamento',
-                          tileBuilder: _targetDarkModeTileBuilder,
                         ),
                         if (currentTrip != null && currentTrip.route.isNotEmpty) ...[
                           PolylineLayer(
@@ -620,15 +657,16 @@ class _HistoricoViewState extends State<HistoricoView> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              const Row(
                 children: [
-                  const Icon(Icons.route, color: Color(0xFFFF1E2D), size: 18),
-                  const SizedBox(width: 8),
-                  const Text(
+                  Icon(Icons.route, color: Color(0xFFFF1E2D), size: 18),
+                  SizedBox(width: 8),
+                  Text(
                     'Viagens Registradas',
                     style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                   ),
@@ -686,7 +724,7 @@ class _HistoricoViewState extends State<HistoricoView> {
       onTap: () => setState(() => _filtroData = val),
       borderRadius: BorderRadius.circular(4),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: active ? const Color(0xFFFF1E2D) : const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(4),
@@ -713,16 +751,16 @@ class _HistoricoViewState extends State<HistoricoView> {
         if (index == 0) {
           // Cabeçalho da Tabela
           return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             color: const Color(0xFF111A23),
             child: const Row(
               children: [
-                SizedBox(width: 76, child: Text('Data', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
-                SizedBox(width: 50, child: Text('Início', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
-                SizedBox(width: 55, child: Text('Paragem', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
-                SizedBox(width: 55, child: Text('Duração', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                SizedBox(width: 96, child: Text('Data', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                SizedBox(width: 48, child: Text('Início', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                SizedBox(width: 52, child: Text('Paragem', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                SizedBox(width: 52, child: Text('Duração', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
                 Expanded(child: Text('Distância', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
-                SizedBox(width: 55, child: Text('Máx', textAlign: TextAlign.right, style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
+                SizedBox(width: 48, child: Text('Máx', textAlign: TextAlign.right, style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold))),
               ],
             ),
           );
@@ -736,7 +774,7 @@ class _HistoricoViewState extends State<HistoricoView> {
         return InkWell(
           onTap: () => _selecionarViagem(globalIdx),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected ? const Color(0xFF1E293B) : Colors.transparent,
               border: Border(
@@ -750,8 +788,9 @@ class _HistoricoViewState extends State<HistoricoView> {
             child: Row(
               children: [
                 SizedBox(
-                  width: 76,
+                  width: 96,
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         isSelected ? Icons.check_box : Icons.check_box_outline_blank,
@@ -759,20 +798,27 @@ class _HistoricoViewState extends State<HistoricoView> {
                         color: isSelected ? const Color(0xFFFF1E2D) : const Color(0xFF64748B),
                       ),
                       const SizedBox(width: 5),
-                      Text(trip.date, style: TextStyle(color: isSelected ? Colors.white : const Color(0xFFCBD5E1), fontSize: 11)),
+                      Text(
+                        trip.date,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
+                          fontSize: 10.5,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 SizedBox(
-                  width: 50,
+                  width: 48,
                   child: Text(trip.start, style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
                 ),
                 SizedBox(
-                  width: 55,
+                  width: 52,
                   child: Text(trip.end, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                 ),
                 SizedBox(
-                  width: 55,
+                  width: 52,
                   child: Text(trip.duration, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                 ),
                 Expanded(
@@ -786,7 +832,7 @@ class _HistoricoViewState extends State<HistoricoView> {
                   ),
                 ),
                 SizedBox(
-                  width: 55,
+                  width: 48,
                   child: Text(
                     trip.maxSpeed != null ? '${trip.maxSpeed}' : '-',
                     textAlign: TextAlign.right,
@@ -1301,15 +1347,4 @@ class _SpeedGraphPainter extends CustomPainter {
   }
 }
 
-// TILE BUILDER COM MODO ESCURO ELEGANTE PARA OPENSTREETMAP
-Widget _targetDarkModeTileBuilder(BuildContext context, Widget tileWidget, TileImage tile) {
-  return ColorFiltered(
-    colorFilter: const ColorFilter.matrix([
-      -0.21, -0.72, -0.07, 0, 255, // Inverte e escurece tons
-      -0.21, -0.72, -0.07, 0, 255,
-      -0.21, -0.72, -0.07, 0, 255,
-      0, 0, 0, 1, 0,
-    ]),
-    child: tileWidget,
-  );
-}
+

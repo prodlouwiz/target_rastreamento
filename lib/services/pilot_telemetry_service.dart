@@ -543,65 +543,120 @@ class PilotTelemetryService {
         speeds: [0, 22, 38, 47, 34, 0],
       ),
 
-      // 7. VIAGEM PRINCIPAL DO PILOT GPS (29.10.2026 11:14 - 12:02, 4.95 km, Máx 40 km/h)
-      // Trajeto detalhado rua a rua em Jardim Bela Vista / Village Rio das Ostras / Jardim Mariléa
+      // 7. VIAGEM PRINCIPAL DO PILOT GPS (29.10.2026 11:14 - 12:02, 4.85 km, Máx 40 km/h)
+      // Trajeto detalhado de cada sinal do rastreador GT06 em Jardim Bela Vista / Rodovia Amaral Peixoto / Atlântica / Village Rio das Ostras
       _createTrip(
         date: '29.10.2026',
         start: '11:14',
         end: '12:02',
         duration: '00:47',
-        distanceKm: 4.95,
+        distanceKm: 4.85,
         maxSpeed: 40,
         avgSpeed: 26,
         coords: [
-          // Partida A (Jardim Bela Vista na Av. dos Bandeirantes)
-          [-22.50650, -41.93150],
+          // 1. Partida A: Jardim Bela Vista / Av. dos Bandeirantes (11:14)
+          [-22.50850, -41.93050],
+          [-22.50780, -41.93120],
+          [-22.50710, -41.93190],
+          [-22.50640, -41.93260],
+          [-22.50570, -41.93330],
+          [-22.50500, -41.93410],
+          [-22.50430, -41.93490],
+          [-22.50360, -41.93580],
+          // 2. Acesso à Rodovia Amaral Peixoto (RJ-106)
+          [-22.50280, -41.93680],
+          [-22.50200, -41.93790],
+          [-22.50120, -41.93910],
+          [-22.50040, -41.94040],
+          [-22.49960, -41.94180],
+          [-22.49880, -41.94320],
+          [-22.49810, -41.94460],
+          [-22.49740, -41.94600],
+          [-22.49670, -41.94740],
+          [-22.49600, -41.94880],
+          // 3. Entrando em Atlântica pela Av. Brasil / Rua Santo Agostinho (11:18)
+          [-22.49540, -41.94990],
+          [-22.49480, -41.95100],
+          [-22.49420, -41.95210],
+          [-22.49360, -41.95320],
+          [-22.49300, -41.95420],
+          // 4. Parada rápida 11:18 (ACC OFF / ON)
+          [-22.49250, -41.95510],
+          [-22.49250, -41.95510],
+          // 5. Subindo pelas ruas de Atlântica (Rua Campo de Bicudo / Rua Nova Iguaçu)
+          [-22.49180, -41.95590],
+          [-22.49110, -41.95670],
+          [-22.49040, -41.95750],
+          // 6. Parada 11:20 (ACC OFF / ON na Rua Barra Mansa)
+          [-22.48980, -41.95820],
+          [-22.48980, -41.95820],
+          // 7. Esquina noroeste de Village Rio das Ostras próximo à RO-005
+          [-22.48910, -41.95760],
+          [-22.48850, -41.95680],
+          // 8. Curva leste na Rua Campo de Roncador (11:22)
+          [-22.48810, -41.95580],
+          [-22.48780, -41.95460],
+          [-22.48750, -41.95340],
+          [-22.48730, -41.95230],
+          // 9. Parada e Estacionamento prolongado 11:22 a 11:41 (No Signal / ACC OFF)
+          [-22.48730, -41.95230],
+          [-22.48730, -41.95230],
+          // 10. Partida 11:41 (ACC ON) - Rua São Judas Tadeu descendo sudeste
+          [-22.48800, -41.95170],
+          [-22.48880, -41.95110],
+          [-22.48960, -41.95050],
+          [-22.49040, -41.94990],
+          [-22.49120, -41.94930],
+          // 11. Entrando na Rua das Acácias / Village Rio das Ostras
+          [-22.49060, -41.94820],
+          [-22.48990, -41.94700],
+          [-22.48930, -41.94580],
+          [-22.49010, -41.94490],
+          [-22.49090, -41.94410],
+          [-22.49180, -41.94480],
+          [-22.49270, -41.94560],
+          [-22.49360, -41.94650],
+          // 12. Retornando ao corredor da Rodovia Amaral Peixoto (RJ-106)
+          [-22.49460, -41.94760],
+          [-22.49550, -41.94870],
+          [-22.49640, -41.94720],
+          [-22.49740, -41.94550],
+          [-22.49850, -41.94360],
+          [-22.49970, -41.94160],
+          [-22.50100, -41.93950],
+          [-22.50230, -41.93730],
+          [-22.50370, -41.93510],
+          // 13. Av. dos Bandeirantes descendo para o ponto final B (12:02)
+          [-22.50500, -41.93320],
           [-22.50610, -41.93210],
-          [-22.50550, -41.93320],
-          [-22.50480, -41.93480],
-          [-22.50390, -41.93660],
-          [-22.50310, -41.93820],
-          [-22.50220, -41.94010],
-          [-22.50110, -41.94210],
-          // Rodovia Amaral Peixoto (RJ-106)
-          [-22.49980, -41.94310],
-          [-22.49850, -41.94520],
-          [-22.49750, -41.94720],
-          [-22.49650, -41.94900],
-          // Entrando na Av. Atlântica / Jardim Mariléa
-          [-22.49520, -41.95050],
-          [-22.49420, -41.95200],
-          [-22.49350, -41.95350],
-          // Entrando em Village Rio das Ostras na Rua Campo de Roncador
-          [-22.49250, -41.95480],
-          [-22.49150, -41.95600], // Parada 11:18 (ACC OFF / ON)
-          [-22.49080, -41.95520],
-          [-22.48990, -41.95410], // Parada 11:20 (ACC OFF / ON)
-          [-22.48920, -41.95300],
-          [-22.48850, -41.95180], // Parada 11:22 a 11:41 (Estacionado)
-          [-22.48950, -41.95080], // 11:41 Partida novamente
-          [-22.49050, -41.94950],
-          [-22.49180, -41.94800],
-          [-22.49320, -41.94650],
-          // Retornando à Amaral Peixoto (RJ-106)
-          [-22.49500, -41.94500],
-          [-22.49700, -41.94350],
-          [-22.49900, -41.94180],
-          [-22.50100, -41.93980],
-          [-22.50280, -41.93720],
-          // Av. dos Bandeirantes descendo até o ponto final B
-          [-22.50420, -41.93480],
-          [-22.50550, -41.93300],
-          [-22.50680, -41.93180], // Ponto B (12:02 Chegada)
+          [-22.50720, -41.93120],
+          [-22.50850, -41.93050],
         ],
         speeds: [
-          0, 14, 22, 31, 38, 39, 36, 25, // Trecho 1: Av. Bandeirantes
-          32, 40, 39, 35,                 // Trecho 2: RJ-106 (pico 40 km/h)
-          28, 20, 18, 12, 0,              // Trecho 3: Mariléa e parada 11:18
-          15, 22, 18, 0,                  // Trecho 4: Parada 11:20
-          0,                              // Trecho 5: Estacionado (11:22 - 11:41)
-          16, 28, 35, 39, 40, 38, 32,     // Trecho 6: Retorno acelerado (pico 40 km/h)
-          26, 18, 0,                      // Trecho 7: Desaceleração e parada final
+          // Trecho 1: Partida e aceleração inicial
+          0, 12, 19, 26, 31, 35, 38, 40,
+          // Trecho 2: Rodovia Amaral Peixoto (RJ-106)
+          38, 39, 40, 39, 37, 34, 31, 28, 25, 20,
+          // Trecho 3: Atlântica
+          18, 22, 25, 20, 12,
+          // Trecho 4: Parada 11:18
+          0, 0,
+          // Trecho 5: Aceleração no bairro
+          14, 21, 26,
+          // Trecho 6: Parada 11:20
+          0, 0,
+          // Trecho 7: Curva e desaceleração para estacionar
+          16, 18, 22, 19, 11, 5,
+          // Trecho 8: Estacionado (No Signal - 11:22 a 11:41)
+          0, 0,
+          // Trecho 9: Partida 11:41 e retorno acelerado
+          15, 24, 30, 35, 38,
+          // Trecho 10: Ruas internas Village
+          28, 22, 19, 24, 29, 32, 27, 21,
+          // Trecho 11: Rodovia Amaral Peixoto volta (pico 40 km/h)
+          30, 37, 40, 39, 38, 35, 32, 28, 22,
+          // Trecho 12: Chegada final e parada
+          18, 12, 5, 0,
         ],
         events: [
           PilotEventItem(
@@ -609,7 +664,7 @@ class PilotTelemetryService {
             date: '11:18 29.10.2026',
             event: 'Ignition: Off',
             address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.49150, -41.95600',
+            coords: '-22.49250, -41.95510',
             icon: Icons.key_off,
             color: const Color(0xFF94A3B8),
           ),
@@ -618,7 +673,7 @@ class PilotTelemetryService {
             date: '11:18 29.10.2026',
             event: 'Ignition: On',
             address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.49150, -41.95600',
+            coords: '-22.49250, -41.95510',
             icon: Icons.key,
             color: const Color(0xFF38BDF8),
           ),
@@ -627,7 +682,7 @@ class PilotTelemetryService {
             date: '11:20 29.10.2026',
             event: 'Ignition: Off',
             address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.48990, -41.95410',
+            coords: '-22.48980, -41.95820',
             icon: Icons.key_off,
             color: const Color(0xFF94A3B8),
           ),
@@ -636,7 +691,7 @@ class PilotTelemetryService {
             date: '11:20 29.10.2026',
             event: 'Ignition: On',
             address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.48990, -41.95410',
+            coords: '-22.48980, -41.95820',
             icon: Icons.key,
             color: const Color(0xFF38BDF8),
           ),
@@ -645,16 +700,25 @@ class PilotTelemetryService {
             date: '11:22 29.10.2026',
             event: 'Ignition: Off',
             address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.48850, -41.95180',
+            coords: '-22.48730, -41.95230',
             icon: Icons.key_off,
             color: const Color(0xFF94A3B8),
+          ),
+          PilotEventItem(
+            vehicle: plate,
+            date: '11:22 29.10.2026',
+            event: 'Ignition: On',
+            address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
+            coords: '-22.48730, -41.95230',
+            icon: Icons.key,
+            color: const Color(0xFF38BDF8),
           ),
           PilotEventItem(
             vehicle: plate,
             date: '11:41 29.10.2026',
             event: 'Ignition: On',
             address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.48850, -41.95180',
+            coords: '-22.48730, -41.95230',
             icon: Icons.key,
             color: const Color(0xFF38BDF8),
           ),
@@ -663,34 +727,79 @@ class PilotTelemetryService {
             date: '11:41 29.10.2026',
             event: 'Ignition: Off',
             address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.48950, -41.95080',
+            coords: '-22.48800, -41.95170',
             icon: Icons.key_off,
             color: const Color(0xFF94A3B8),
           ),
           PilotEventItem(
             vehicle: plate,
             date: '11:42 29.10.2026',
-            event: 'Ignition: On',
-            address: '28895-640, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.49050, -41.94950',
-            icon: Icons.key,
-            color: const Color(0xFF38BDF8),
-          ),
-          PilotEventItem(
-            vehicle: plate,
-            date: '11:43 29.10.2026',
             event: 'Ignition: Off',
             address: '28895-616, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.49180, -41.94800',
+            coords: '-22.48960, -41.95050',
             icon: Icons.key_off,
             color: const Color(0xFF94A3B8),
           ),
           PilotEventItem(
             vehicle: plate,
-            date: '11:44 29.10.2026',
+            date: '11:43 29.10.2026',
             event: 'Ignition: On',
             address: '28895-616, Região Geográfica Imediata de Macaé - Rio das Ostras',
-            coords: '-22.49320, -41.94650',
+            coords: '-22.49040, -41.94990',
+            icon: Icons.key,
+            color: const Color(0xFF38BDF8),
+          ),
+          PilotEventItem(
+            vehicle: plate,
+            date: '11:45 29.10.2026',
+            event: 'Ignition: Off',
+            address: '28895-616, Região Geográfica Imediata de Macaé - Rio das Ostras',
+            coords: '-22.48990, -41.94700',
+            icon: Icons.key_off,
+            color: const Color(0xFF94A3B8),
+          ),
+          PilotEventItem(
+            vehicle: plate,
+            date: '11:46 29.10.2026',
+            event: 'Ignition: On',
+            address: '28895-616, Região Geográfica Imediata de Macaé - Rio das Ostras',
+            coords: '-22.48930, -41.94580',
+            icon: Icons.key,
+            color: const Color(0xFF38BDF8),
+          ),
+          PilotEventItem(
+            vehicle: plate,
+            date: '11:50 29.10.2026',
+            event: 'Ignition: Off',
+            address: '28895-600, Região Geográfica Imediata de Macaé - Rio das Ostras',
+            coords: '-22.49180, -41.94480',
+            icon: Icons.key_off,
+            color: const Color(0xFF94A3B8),
+          ),
+          PilotEventItem(
+            vehicle: plate,
+            date: '11:51 29.10.2026',
+            event: 'Ignition: On',
+            address: '28895-600, Região Geográfica Imediata de Macaé - Rio das Ostras',
+            coords: '-22.49270, -41.94560',
+            icon: Icons.key,
+            color: const Color(0xFF38BDF8),
+          ),
+          PilotEventItem(
+            vehicle: plate,
+            date: '11:55 29.10.2026',
+            event: 'Ignition: Off',
+            address: '28895-580, Região Geográfica Imediata de Macaé - Rio das Ostras',
+            coords: '-22.49550, -41.94870',
+            icon: Icons.key_off,
+            color: const Color(0xFF94A3B8),
+          ),
+          PilotEventItem(
+            vehicle: plate,
+            date: '11:56 29.10.2026',
+            event: 'Ignition: On',
+            address: '28895-580, Região Geográfica Imediata de Macaé - Rio das Ostras',
+            coords: '-22.49740, -41.94550',
             icon: Icons.key,
             color: const Color(0xFF38BDF8),
           ),
@@ -699,7 +808,7 @@ class PilotTelemetryService {
             date: '12:02 29.10.2026',
             event: 'Ignition: Off',
             address: '28895-535, Av. dos Bandeirantes, Jardim Bela Vista, Rio das Ostras',
-            coords: '-22.50680, -41.93180',
+            coords: '-22.50850, -41.93050',
             icon: Icons.key_off,
             color: const Color(0xFF94A3B8),
           ),
@@ -769,8 +878,8 @@ class PilotTelemetryService {
       final frac = coords.length > 1 ? (i / (coords.length - 1)) : 0.0;
       final ts = (dtStart.millisecondsSinceEpoch ~/ 1000) + (frac * totalSeconds).round();
 
-      // No Signal durante estacionamento na viagem das 11h14 (entre 11:28 e 11:38)
-      final isNoSig = (start == '11:14' && i >= 19 && i <= 21);
+      // No Signal durante estacionamento na viagem das 11h14 (entre 11:22 e 11:41)
+      final isNoSig = (start == '11:14' && i >= 34 && i <= 40);
 
       route.add(LatLng(lat, lon));
       points.add(RawGpsPoint(
